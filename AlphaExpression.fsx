@@ -1,8 +1,7 @@
+#!/usr/bin/env -S dotnet fsi
+
 #load "wizards.fsx"
 open Wizards
-
-type Ro<'a> = Ro of 'a
-type Rw<'a> = Rw of 'a
 
 // Alpha Expression to pick things
 type Expr<'a> =
@@ -62,7 +61,7 @@ let isNormal' w =
 let isSword' w = Weapon.typ w = Weapon.Sword
 let isStaff' w = Weapon.typ w = Weapon.Staff
 
-let damageHeigher' x w = 
+let damageHeigher' x w =
     Weapon.damage w > x
 
 
@@ -93,8 +92,8 @@ let list = seq {
     yield Some (string 1)
     yield None
     for x in 3 .. System.Int32.MaxValue do
-        if x % 2 <> 0 
-        then yield Some (string x) 
+        if x % 2 <> 0
+        then yield Some (string x)
         else yield None
 }
 
@@ -102,7 +101,7 @@ let list' = [
     yield Some (string 1)
     yield None
     for x in 3 .. 1_000_000 do
-        if x % 2 <> 0 
-        then yield Some (string x) 
+        if x % 2 <> 0
+        then yield Some (string x)
         else yield None
 ]
