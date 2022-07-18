@@ -1,0 +1,46 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use v5.32;
+use Data::Printer;
+use Text::Table;
+use FindBin;
+use lib "$FindBin::Bin";
+use Schema;
+use Getopt::Long;
+
+# To show DBIx::Class SQL Queries
+# $ENV{DBIC_TRACE} = 1;
+
+my $song = '%';
+GetOptions(
+    's|song=s' => \$song,
+);
+
+my $schema  = Schema->connect("dbi:SQLite:dbname=alben.sqlite3", "", "", {RaiseError => 1, AutoCommit => 1})
+    or die "Cannot connect\n";
+
+# Loads all the Songs inlcluding all related data
+# with 1 SELECT Query
+my @songs = $schema->resultset('Song')->search(
+    {
+        'me.name' => { like => $song },
+    },
+    {
+        join     => { album => 'artist' },
+        prefetch => { album => 'artist' },
+        order_by => ['artist.name', 'album.name', 'me.track'],
+    }
+);
+
+my $table = Text::Table->new('Artist', 'Album', 'Track', 'Song', 'Duration');
+for my $song ( @songs ) {
+    $table->add(
+        $song->album->artist->name,
+        $song->album->name,
+        $song->track,
+        $song->duration,
+    );
+}
+
+printf "%s\n", $table->stringify;
