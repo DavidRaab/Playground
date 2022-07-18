@@ -8,7 +8,7 @@ general.
 
 File Name              | Description
 -----------------------|-------------------
-ActivePatterns.fsx     | F# Active Patterns
-AlphaExpression.fsx    | Example of an DSL
+activePatterns.fsx     | F# Active Patterns
+alphaExpression.fsx    | Example of an DSL
 applicative_list.fsx   | Applicative Example for List
 applicative_result.fsx | Applicative Example for Result

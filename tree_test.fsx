@@ -1,4 +1,6 @@
-#load "Tree.fs"
+#!/usr/bin/env -S dotnet fsi
+
+#load "tree.fs"
 
 let isEven x = x % 2 = 0
 
@@ -12,7 +14,7 @@ Tree.sum evens
 Tree.sum (Tree.ofList [0.0;1.3;2.6;33.3456;-22.3])
 
 let rec for' i loopTo body =
-    if i < loopTo then 
+    if i < loopTo then
         body i
         for' (i+1) loopTo body
     else
@@ -115,7 +117,7 @@ let person firstName lastName =
         PrintName  = (fun () -> printfn "Hello, %s %s" firstName lastName)
         PrintFirst = (fun () -> printfn "Hello %s" firstName)
     |}
-    
+
 
 let p2 = person "David" "Raab"
 p2.PrintName()
@@ -170,14 +172,14 @@ let rec print expr =
     | Literal x      -> (string x)
     | Addition (l,r) -> sprintf "(%s + %s)" (print l) (print r)
     | Multi    (l,r) -> sprintf "(%s * %s)" (print l) (print r)
- 
+
 let rec toRacket expr =
     match expr with
     | Literal x      -> (string x)
     | Addition (l,r) -> sprintf "(+ %s %s)" (toRacket l) (toRacket r)
     | Multi    (l,r) -> sprintf "(* %s %s)" (toRacket l) (toRacket r)
 
-let expr = 
+let expr =
     (mul
         (add
             (add (num 1.0) (num 2.0))
