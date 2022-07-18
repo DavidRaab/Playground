@@ -1,5 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
+// Applicative for List
+
 let ap fs xs =
     List.foldBack2 (fun f x state ->
         f x :: state

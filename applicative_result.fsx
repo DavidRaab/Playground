@@ -1,3 +1,4 @@
+#!/usr/bin/env -S dotnet fsi
 
 type Res<'a> =
     | Ok of 'a
