@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget: Expecto"
 #load "Combinators.fsx"
-#load "FSExtensions.fsx"
+#load "../FSExtensions.fsx"
 open FSExtensions
 open Combinators
 open Expecto

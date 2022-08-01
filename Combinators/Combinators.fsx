@@ -1,4 +1,4 @@
-#load "FSExtensions.fsx"
+#load "../FSExtensions.fsx"
 
 open System
 open FSExtensions
