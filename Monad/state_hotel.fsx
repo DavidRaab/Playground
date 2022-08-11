@@ -54,7 +54,7 @@ view (
                     (update Created initial_state)))))
 )
 
-// 3. Deactivated -- no Created so it states deactivated
+// 3. Deactivated -- no Created so it stays deactivated
 view (
     initial_state
     |> update CheckedIn
@@ -68,7 +68,7 @@ view (
     |> update CheckedIn
 )
 
-// 5. same as 1 --Deactivated
+// 5. same as 1 -- Deactivated
 view (
     List.fold
         (fun model event -> update event model)
@@ -77,14 +77,14 @@ view (
 )
 
 // create a Function from the fold
-let applyEvents model events =
+let updates events model =
     List.fold (fun model event -> update event model) model events
 
 // same as 5 -- Deactivated
-view (applyEvents initial_state [Created;CheckedIn;CheckedIn;CheckedOut;Deactivated])
+view (updates [Created;CheckedIn;CheckedIn;CheckedOut;Deactivated] initial_state)
 
 // same as 4 -- CheckedIn
-view (applyEvents initial_state [Created;CheckedIn])
+view (updates [Created;CheckedIn] initial_state)
 
 // when i switch order of arguments in update
 let update_r event model = update model event
@@ -97,6 +97,7 @@ view (List.fold update_r initial_state [Created;CheckedOut])
 
 // so instead of one argument, you can pass a list of arguments.
 // The state is automatically passed through all function calls
+// you only get the last state
 
 
 // Object-thinking
