@@ -114,6 +114,13 @@ List.fold update_r initial_state [Created;CheckedOut]
 // and then pass it one argument of the list in order to get
 // to the end-state
 
+// The List.fold looks unfolded like this. So you can see
+// how List.fold in the functional-style resembles "normal" function calling.
+// You just get away with all the in-between states and "unfolding" the list.
+let s1 = update_r initial_state Created
+let s2 = update_r s1            CheckedOut
+view s2
+
 
 // Snapshot | or Time-Traversal Debugging | Whoooaaaahhh!
 view (List.scan update_r initial_state [Created;CheckedOut])
