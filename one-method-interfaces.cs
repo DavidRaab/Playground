@@ -60,30 +60,31 @@ Console.WriteLine("Double: {0}", Fn.Show(dbl.Execute(numbers)));
 
 
 // One Method interface -- function
-// interface Function<A,B> {
-//     B Execute(A a);
-// }
+interface Function<A,B> {
+    B Execute(A a);
+}
 
-// class List {
-//     public static List<B> map<A,B>(Function<A,B> f, List<A> xs) {
-//         var result = new List<B>();
-//         foreach (var x in xs) {
-//             result.Add( f.Execute(x) );
-//         }
-//         return result;
-//     }
-// }
+class List {
+    public static List<B> map<A,B>(Function<A,B> f, List<A> xs) {
+        var result = new List<B>();
+        foreach (var x in xs) {
+            result.Add( f.Execute(x) );
+        }
+        return result;
+    }
+}
 
-// class Double : Function<int,int> {
-//     public int Execute(int x) {
-//         return x * 2;
-//     }
-// }
+class Double : Function<int,int> {
+    public int Execute(int x) {
+        return x * 2;
+    }
+}
 
-// var doubles = List.map(new Double(), numbers);
-// Console.WriteLine("{0}", Fn.Show(doubles));
+var doubles = List.map(new Double(), numbers);
+Console.WriteLine("{0}", Fn.Show(doubles));
 
 
+// Re-written using Func<>
 class List {
     public static List<B> map<A,B>(Func<A,B> f, List<A> xs) {
         var result = new List<B>();
@@ -96,3 +97,4 @@ class List {
 
 var doubles = List.map(x => x * 2, numbers);
 Console.WriteLine("Invoke: {0}", Fn.Show(doubles));
+
