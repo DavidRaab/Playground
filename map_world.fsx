@@ -2,18 +2,22 @@
 
 (* `map` operates on functions!
 
-Some people, me including, had problems understanding the `map` function. Don't get me wrong. As
-a Perl programmer `map` is built into the core language and I used and understanded it very well.
+When I started with F# I has some problems understanding the `map` function. Don't get me wrong. As
+a Perl programmer `map` is built into the core language and I used and understanded it very well
+in Perl.
 
-But I didn't understand `Async.map`, `Option.map`, `Foo.map` and so on. The problem with this was that
-i misunderstood `map`. The conecption I learned (from others) was something like:
+But in F# you will encounter `Async.map`, `Option.map`, `Foo.map` and so on and I didn't get what
+those `map` function did for those types!
 
-> map is a higher-order function that executes a function on every element on a list producing
+The problem was not really that I misunderstood `map`, it was because I just learned
+it wrong. The concept I learned was something like:
+
+> `map` is a higher-order function that executes a function on every element on a list producing
 > a new list this way.
 
-While this is absolutely correct. It is a poor explanation to understand any other kind of `map`
-function. This description only holds for the `List.map` function. But doesn't explain `map` for
-any other type.
+And I guess you maybe also also learned it that way. While this explanation is not wrong, it is also
+not right. The description above just explains the `List.map` function or in general just one invocation
+of the `map` function. But not the general concept behind it.
 
 The first thing you have to realize is. That `map` is actually not about a `list`, `option` and so on.
 While you must implement it for the different types. It really is about the function you pass as the first
@@ -33,17 +37,17 @@ this way.
 
 So it takes a function and a list. And it just executes the function for every element. But looking this way
 on `Async.map` or `Option.map` it was hard for me to really understood what those functions does in those cases.
-Even more, if i want to implement them myself. What is the correct implementation of it?
+Even more, if I wanted to implement them myself. What is the correct implementation of it? I had absolutely no clue.
 
-Maybe for `option<'a>` it is not so hard, as you can just think of option as either a one-element list or an empty
-list. But for `Async.map` i just didn't get it for a long time. I got enlightenment when I throw away
+Maybe for `option<'a>` it is not so hard, as you can just think of `option` as either a one-element list or an empty
+list. But for `Async.map` I just didn't get it for a long time. I got enlightenment when I throw away
 what I already knew, and looked at `map` as a one-argument function.
 
 ## `map` as a one-argument function
 
 One important thing in F# is, that every function is actually just a one argument function. There doesn't exists
-functions with multiple arguments. Even the `map` function above is actually a one-argument function, that returns
-a new function. You can look at it, this way.
+functions with multiple arguments. Even the `map` function above is actually a one-argument function that returns
+a new function. You can look at it this way.
 
     (1. Argument)    (Return Value)
     ('a -> 'b)    -> (list<'a> -> list<'b>)
@@ -56,7 +60,9 @@ What `map` really does is just transform the input function. It somehow wraps wh
 and puts a `list` around it.
 
 You have a function `async<url> -> async<option<string>>` if you pass that to `List.map` you get a
-new function with the signature: `list<async<url>> -> list<async<option<string>>>`
+new function with the signature: `list<async<url>> -> list<async<option<string>>>`. This is the same
+for any other `map` function. So a `Result.map` just turns a `'a -> 'b' into a 'Result<'a> -> Result<'b>`
+function.
 
 ## map transformer
 
@@ -73,6 +79,46 @@ let square x = x * x
 let squareList = List.map square
 
 (*
+So even if you pass all two arguments to `List.map` you still think of it as a transformer. For example
+you would normaly write
+
+    let x = square 4
+
+to square a `4`, but what happens if you have a list of values?
+
+    let xs = List.map square [4;5;6]
+
+Think of it that way. You still execute `square` but the next argument now turns into a list because
+you put `List.map` in front of it. The return value will also now be a `list`.
+
+    let ox = Option.map square (Some 4)
+
+Here the same. You still execute `square` but the next argument turns into an `option`, and you get
+an `option` back.
+
+That's also why I prefer to write:
+
+    List.map square numbers
+
+instead of
+
+    numbers |> List.map square
+
+I call the pipe the Object-orientet invocation and it hides what it does. It looks like `numbers` is the
+important aspect, and it looks like a method called on a `list`. But that is not the important aspect.
+Because `map` is really about the function you use not the arguments passed to the function.
+
+This invocation
+
+    List.map6 func a b c d e f
+
+for example just executes `func` and all of the 6 arguments to `func` now can be lists. `map`
+upgrades the arguments of a function. And sure it now also returns a `list` instead of a single argument.
+That is what I mean with *function transformators*. And it exactly resembles what you
+would write if those arguments would not be lists. You would write:
+
+    func a b c d e f
+
 ## map on inner-type
 
 You also can think of `map` as a function that lets you work on the inner-type. This is more
