@@ -139,18 +139,25 @@ does something with an `int` but not `Async<int>` then you just use `Async.map`.
 
 You have a `Foo<int>` and want to work with the `int` inside the `Foo` type? Just use `Foo.map`
 
+This mind-model also works for `List.map2`, `List.map3` and so on. It lets you work on the inner
+type but it let's you use multiple lists at once.
+
+    List.map2 (fun x y -> ... ) xs ys
+
+So the function you pass to `map` always just sees one of the inner type of `xs` and `ys`.
+
 ## Conclusion
 
 Think of `X.map` is either one of the above. You either **upgrade** a function and put wrappers around
 the input and output types of whatever `X` is.
 
 Or think of this function as something that works on the inside of the type. This means, something is
-unwrapped and wrapped again. Like a list is unwrapped (unfoled) and then wraped (folded) again. But
+unwrapped and wrapped again. Like a list is unwrapped (unfolded) and then wraped (folded) again. But
 you don't have to know how that is done (even for other types). Just think of it as don't caring
 for the wrapped type at all. Just do something of what's inside of the type.
 
-But defenitely never think of `map` as a function that iterates through every element of a list. This
-is what you probably know because that's all what other languages usually provides. But you have to
+But definitely never think of `map` as a function that iterates through every element of a list. This
+is what you probably know because that's what all other languages usually provides. But you have to
 abondon this idea because its wrong and just stands in your way to really understand what `map` is all
 about.
 *)
