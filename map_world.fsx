@@ -119,6 +119,15 @@ would write if those arguments would not be lists. You would write:
 
     func a b c d e f
 
+Compare again.
+
+                func a b c
+    Result.map3 func a b c
+
+The first invocation of `func` expects the exact types that `func` needs. With `Result.map3` now
+all three arguments of `func` must be wrapped in `Result` and you get a `Result` back. Sure you only
+do this kind of `map` if you have `Result`, `Option` or whatever you have in your code.
+
 ## map on inner-type
 
 You also can think of `map` as a function that lets you work on the inner-type. This is more
