@@ -107,4 +107,7 @@ Here are some improvements and suggestions, to myself and you whoever who reads 
 4. A class can easily return mutiple methods on an object. How would you do that in F#?
 5. Is it a good idea to return multiple methods/functions?
 6. Should we stick to a single function? Is this not the core of what **Single-responsibility principle** teaches us?
+7. Would you create an IGreeter in the C# version? Do you think this is important?
+8. Even if you create an IGreeter interface in C#. In F# you will not need that, and
+   you get the same benefits as you would have in C#. Do you know why?
 *)
