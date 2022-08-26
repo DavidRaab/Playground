@@ -84,5 +84,5 @@ would be understandable. How makes it even sense to put the function before the 
 
     *(3, +(2,5))
 
-How is ever come up with this kind of shit?
+Who ever came up with this kind of shit?
 *)
