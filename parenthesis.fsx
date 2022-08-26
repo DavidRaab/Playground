@@ -71,7 +71,7 @@ the position. It is `(func x y)` instead of `func(x,y)` but the first version is
 much easier to read. Especially in code where every argument can become another more
 complex expression.
 
-I mean, i don't get it in mathematics I also would write:
+I mean, i don't get it. In mathematics I also would write:
 
     (3 * (2 + 5))
 
