@@ -53,6 +53,23 @@ module Timer =
                     Pending
         ))
 
+    // A function is runned for a duration
+    // It runs on every Timed.run until the duration is reached, then it returns Finished
+    // Through the calls a state is passed and finally returned
+    let duration duration (state:'State) f =
+        Timer(fun () ->
+            let mutable elapsedTime = TimeSpan.Zero
+            let mutable state       = state
+            Timed.create (fun deltaTime ->
+                elapsedTime <- elapsedTime + deltaTime
+                if elapsedTime <= duration then
+                    state <- f state deltaTime
+                    Pending
+                else
+                    Finished state
+            )
+        )
+
     // Same as create, but already expects seconds (in float) instead of TimeSpan
     let seconds seconds f =
         create (TimeSpan.FromSeconds seconds) f
@@ -151,8 +168,11 @@ module Timer =
     // It's like: Timer.Parallel timers |> Timer.map f
     let ParallelMap f timers = Timer(fun () ->
         let timeds = Array.ofSeq (Seq.map Timed.get timers)
+        let res    = Array.replicate (Array.length timeds) Pending
         Timed.create (fun dt ->
-            let res = Array.map (Timed.run dt) timeds
+            for idx=0 to timeds.Length-1 do
+                res.[idx] <- Timed.run dt timeds.[idx]
+
             if Array.forall TimerResult.isFinished res then
                 Finished (Array.map (fun x ->
                     match x with
@@ -192,6 +212,9 @@ module Timer =
     let sleep sec =
         seconds sec id
 
+    let set x timer =
+        timer |> map (fun _ -> x)
+
 type TimerCE() =
     member _.Bind(t,f)     = Timer.bind f t
     member _.Return(x)     = Timer.wrap x
@@ -205,9 +228,9 @@ type TimerCE() =
 let timer = TimerCE()
 
 
-let runUntilFinished timer =
+let runUntilFinished stepTime timer =
     let mutable timeSoFar = TimeSpan.Zero
-    let stepTime          = TimeSpan.FromSeconds 0.05
+    let stepTime          = TimeSpan.FromSeconds stepTime
     let timed             = Timed.get timer
 
     printfn "Starting..."
@@ -261,27 +284,41 @@ let helloWorldX = timer {
 // runUntilFinished helloToT
 // runUntilFinished (Timer.map (fun (x,y) -> x + y) helloWorldTimer)
 // runUntilFinished numSum
-// runUntilFinished numsP
-// runUntilFinished numsS
+runUntilFinished 0.2 (numsP |> Timer.map (fun xs -> printfn "Sum: %d" (Array.sum xs)))
+runUntilFinished 0.2 (numsP |> Timer.set "Parallel")
+runUntilFinished 0.2 (numsS |> Timer.set "Sequential")
 
-runUntilFinished
+runUntilFinished 0.2
     (sumTimers
         (Timer.seconds 0.3 (fun () -> 2))
         (Timer.seconds 0.3 (fun () -> 2)))
 
-runUntilFinished helloWorldX
+runUntilFinished 0.2 helloWorldX
 
-runUntilFinished (timer {
+runUntilFinished 0.2 (timer {
     let! x = Timer.seconds 0.5 (fun () -> 5)
     and! y = Timer.seconds 0.5 (fun () -> 5)
     and! z = Timer.seconds 0.5 (fun () -> 5)
     return x + y + z
 })
 
-runUntilFinished (
+runUntilFinished 0.2 (
     Timer.bind2 (fun x y -> Timer.wrap (x + y)) numA numB
 )
 
-runUntilFinished (
+runUntilFinished 0.2 (
     Timer.wrap "Delayed" |> Timer.delay 0.8
+)
+
+// Simulating a 60fps gameTime
+runUntilFinished (1.0 / 60.0) (
+    Timer.duration (TimeSpan.FromSeconds 1.0) (0,0.0) (fun (counter,state) dt ->
+        let newState = state + (dt.TotalSeconds * 3.0)
+        printfn "%d -> Set X Position %f" counter newState
+        (counter+1,newState)
+    )
+    |> Timer.map (fun (counter,state) ->
+        printfn "Final: Set X Position: %f" 3.0
+        3.0
+    )
 )
