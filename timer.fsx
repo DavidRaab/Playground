@@ -2,6 +2,7 @@
 
 type TimeSpan = System.TimeSpan
 
+[<Struct>]
 type TimerResult<'a> =
     | Pending
     | Finished of 'a
@@ -86,18 +87,16 @@ module Timer =
     let bind f timer =
         Timer(fun () ->
             let timedA         = Timed.get timer
-            let mutable timedB = ValueNone
+            let mutable timedB = Unchecked.defaultof<_>
             Timed.create (fun deltaTime ->
                 match Timed.run deltaTime timedA with
                 | Pending    -> Pending
                 | Finished x ->
-                    match timedB with
-                    | ValueNone ->
-                        let timed = Timed.get (f x)
-                        timedB <- ValueSome timed
-                        Timed.run TimeSpan.Zero timed
-                    | ValueSome timed ->
-                        Timed.run deltaTime timed
+                    if obj.ReferenceEquals(timedB,null) then
+                        timedB <- Timed.get (f x)
+                        Timed.run TimeSpan.Zero timedB
+                    else
+                        Timed.run deltaTime timedB
         ))
 
     let delay time timer =
@@ -244,12 +243,8 @@ let runUntilFinished stepTime timer =
     loop ()
 
 
-let helloWorld () =
-    printfn "Hello World!"
-
 let helloTimer = Timer.seconds 0.7 (fun () -> printfn "Hello"; 1)
 let worldTimer = Timer.seconds 1.3 (fun () -> printfn "World"; 2)
-
 let helloWorldTimer = Timer.andThen helloTimer worldTimer
 
 let helloToT =
@@ -280,7 +275,7 @@ let helloWorldX = timer {
 }
 
 // runUntilFinished helloTimer
-// runUntilFinished helloWorldTimer
+runUntilFinished 0.2 helloWorldTimer
 // runUntilFinished helloToT
 // runUntilFinished (Timer.map (fun (x,y) -> x + y) helloWorldTimer)
 // runUntilFinished numSum
