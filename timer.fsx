@@ -43,6 +43,9 @@ module Timer =
     let wrap x =
         Timer(fun () -> Timed(fun deltaTime -> Finished x))
 
+    let empty =
+        wrap ()
+
     let map f timer =
         Timer(fun () ->
             let timed = Timed.get timer
@@ -126,6 +129,22 @@ module Timer =
     let map5 f x y z a b =
         ap (map4 f x y z a) b
 
+    let bind2 f x y = Timer(fun () ->
+        let ta = Timed.get x
+        let tb = Timed.get y
+        let mutable tc = Unchecked.defaultof<_>
+        Timed.create (fun dt ->
+            if obj.ReferenceEquals(tc, null) then
+                match Timed.run dt ta, Timed.run dt tb with
+                | Finished a, Finished b ->
+                    tc <- Timed.get (f a b)
+                    Timed.run TimeSpan.Zero tc
+                | _ -> Pending
+            else
+                Timed.run dt tc
+        )
+    )
+
     // It's like traverse
     // It turns a sequence of timers into a Timer that runs in parallel. Executing the f function before
     // the result of every timer is put into the result array.
@@ -169,6 +188,22 @@ module Timer =
     let sequential timer =
         sequentialMap id timer
 
+    // A Timer that just sleeps for some time
+    let sleep sec =
+        seconds sec id
+
+type TimerCE() =
+    member _.Bind(t,f)     = Timer.bind f t
+    member _.Return(x)     = Timer.wrap x
+    member _.ReturnFrom(x) = x
+    member _.Zero()        = Timer.empty
+    member _.MergeSources(x,y)        = Timer.map2 (fun x y       -> x,y) x y
+    member _.MergeSources3(x,y,z)     = Timer.map3 (fun x y z     -> x,y,z) x y z
+    member _.MergeSources4(x,y,z,w)   = Timer.map4 (fun x y z w   -> x,y,z,w) x y z w
+    member _.MergeSources5(x,y,z,w,a) = Timer.map5 (fun x y z w a -> x,y,z,w,a) x y z w a
+
+let timer = TimerCE()
+
 
 let runUntilFinished timer =
     let mutable timeSoFar = TimeSpan.Zero
@@ -207,11 +242,42 @@ let numSum = Timer.map4 (fun x y z w -> x + y + z + w) numA numB numC numD
 let numsP  = Timer.Parallel   [numA;numB;numC]
 let numsS  = Timer.sequential [numA;numB;numC]
 
+let sumTimers x y = timer {
+    let! x = x
+    and! y = y
+    return x + y
+}
+
+let helloWorldX = timer {
+    do! Timer.sleep 0.5
+    printfn "Hello"
+    do! Timer.sleep 0.5
+    printfn "World"
+    return ()
+}
 
 // runUntilFinished helloTimer
 // runUntilFinished helloWorldTimer
 // runUntilFinished helloToT
 // runUntilFinished (Timer.map (fun (x,y) -> x + y) helloWorldTimer)
 // runUntilFinished numSum
-runUntilFinished numsP
-runUntilFinished numsS
+// runUntilFinished numsP
+// runUntilFinished numsS
+
+runUntilFinished
+    (sumTimers
+        (Timer.seconds 0.3 (fun () -> 2))
+        (Timer.seconds 0.3 (fun () -> 2)))
+
+runUntilFinished helloWorldX
+
+runUntilFinished (timer {
+    let! x = Timer.seconds 0.5 (fun () -> 5)
+    and! y = Timer.seconds 0.5 (fun () -> 5)
+    and! z = Timer.seconds 0.5 (fun () -> 5)
+    return x + y + z
+})
+
+runUntilFinished (
+    Timer.bind2 (fun x y -> Timer.wrap (x + y)) numA numB
+)
