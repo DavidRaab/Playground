@@ -17,11 +17,6 @@ module TimerResult =
         | Pending    -> true
         | Finished _ -> false
 
-    let map f timed =
-        match timed with
-        | Pending    -> Pending
-        | Finished x -> Finished (f x)
-
 type Timed<'a> = Timed of (TimeSpan -> TimerResult<'a>)
 type Timer<'a> = Timer of (unit -> Timed<'a>)
 
