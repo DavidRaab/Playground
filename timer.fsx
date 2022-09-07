@@ -164,7 +164,7 @@ module Timer =
     // It's like traverse
     // It turns a sequence of timers into a Timer that runs in parallel. Executing the f function before
     // the result of every timer is put into the result array.
-    // It's like: Timer.Parallel timers |> Timer.map f
+    // It's like: Timer.Parallel timers |> Timer.map (Array.map f)
     let ParallelMap f timers = Timer(fun () ->
         let timeds = Array.ofSeq (Seq.map Timed.get timers)
         let res    = Array.replicate (Array.length timeds) Pending
