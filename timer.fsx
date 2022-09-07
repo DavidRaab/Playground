@@ -193,7 +193,7 @@ module Timer =
         let mutable timers = List.ofSeq (Seq.map Timed.get timers)
         Timed.create(fun dt ->
             match timers with
-            | []            -> Finished (results.ToArray())
+            | []          -> Finished (results.ToArray())
             | timer::rest ->
                 match Timed.run dt timer with
                 | Pending    -> Pending
@@ -249,8 +249,10 @@ let helloWorldTimer = Timer.andThen helloTimer worldTimer
 
 let helloToT =
     Timer.flatten (
-    Timer.seconds 0.7 (fun () ->
-        Timer.seconds 0.3 (fun () -> printfn "Hello")))
+        Timer.seconds 0.7 (fun () ->
+            Timer.seconds 0.3 (fun () -> printfn "Hello")
+        )
+    )
 
 let numA   = Timer.seconds 0.3 (fun () -> 3)
 let numB   = Timer.seconds 0.2 (fun () -> 2)
