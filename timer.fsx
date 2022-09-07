@@ -46,6 +46,22 @@ module Timer =
     let empty =
         wrap ()
 
+    // A function is delayed for the given TimeSpan
+    let create delay f =
+        Timer(fun () ->
+            let mutable elapsedTime = TimeSpan.Zero
+            Timed.create (fun deltaTime ->
+                elapsedTime <- elapsedTime + deltaTime
+                if elapsedTime >= delay then
+                    Finished (f ())
+                else
+                    Pending
+        ))
+
+    // Same as create, but already expects seconds (in float) instead of TimeSpan
+    let seconds seconds f =
+        create (TimeSpan.FromSeconds seconds) f
+
     let map f timer =
         Timer(fun () ->
             let timed = Timed.get timer
@@ -72,21 +88,10 @@ module Timer =
                         Timed.run deltaTime timed
         ))
 
-    // A function is delayed for the given TimeSpan
-    let delay delay f =
-        Timer(fun () ->
-            let mutable elapsedTime = TimeSpan.Zero
-            Timed.create (fun deltaTime ->
-                elapsedTime <- elapsedTime + deltaTime
-                if elapsedTime >= delay then
-                    Finished (f ())
-                else
-                    Pending
-        ))
-
-    // Same as delay, but already expects seconds (in float) instead if TimeSpan
-    let seconds seconds f =
-        delay (TimeSpan.FromSeconds seconds) f
+    let delay time timer =
+        seconds time id |> bind (fun () ->
+            timer
+        )
 
     // Executes timerA and when it finishes then timerB -- this is sequential
     let andThen timerA timerB =
@@ -280,4 +285,8 @@ runUntilFinished (timer {
 
 runUntilFinished (
     Timer.bind2 (fun x y -> Timer.wrap (x + y)) numA numB
+)
+
+runUntilFinished (
+    Timer.wrap "Delayed" |> Timer.delay 0.8
 )
