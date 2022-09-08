@@ -5,7 +5,7 @@ type TimeSpan = System.TimeSpan
 [<Struct>]
 type TimerResult<'a> =
     | Pending
-    | Finished of 'a
+    | Finished of 'a * TimeSpan
 
 module TimerResult =
     let isFinished tr =
@@ -31,13 +31,13 @@ module Timed =
             | Pending ->
                 finished <- f dt
                 finished
-            | Finished x -> Finished x
+            | Finished (x,t) -> Finished (x,t)
         )
 
 module Timer =
     // wrap any value into a timer
     let wrap x =
-        Timer(fun () -> Timed(fun deltaTime -> Finished x))
+        Timer(fun () -> Timed(fun deltaTime -> Finished (x,deltaTime)))
 
     let empty =
         wrap ()
@@ -49,7 +49,7 @@ module Timer =
             Timed.create (fun deltaTime ->
                 elapsedTime <- elapsedTime + deltaTime
                 if elapsedTime >= delay then
-                    Finished (f ())
+                    Finished (f (), elapsedTime - delay)
                 else
                     Pending
         ))
@@ -67,7 +67,7 @@ module Timer =
                     state <- f state deltaTime
                     Pending
                 else
-                    Finished state
+                    Finished (state, elapsedTime - duration)
             )
         )
 
@@ -80,8 +80,8 @@ module Timer =
             let timed = Timed.get timer
             Timed.create (fun deltaTime ->
                 match Timed.run deltaTime timed with
-                | Pending    -> Pending
-                | Finished x -> Finished (f x)
+                | Pending        -> Pending
+                | Finished (x,t) -> Finished (f x, t)
         ))
 
     let bind f timer =
@@ -90,11 +90,11 @@ module Timer =
             let mutable timedB = Unchecked.defaultof<_>
             Timed.create (fun deltaTime ->
                 match Timed.run deltaTime timedA with
-                | Pending    -> Pending
-                | Finished x ->
+                | Pending                    -> Pending
+                | Finished (x,remainingTime) ->
                     if obj.ReferenceEquals(timedB,null) then
                         timedB <- Timed.get (f x)
-                        Timed.run TimeSpan.Zero timedB
+                        Timed.run remainingTime timedB
                     else
                         Timed.run deltaTime timedB
         ))
@@ -124,8 +124,8 @@ module Timer =
         let ta = Timed.get timerA
         Timed.create (fun dt ->
             match Timed.run dt tf, Timed.run dt ta with
-            | Finished f, Finished a -> Finished (f a)
-            | _                      -> Pending
+            | Finished (f,tf), Finished (a,ta) -> Finished (f a, min tf ta)
+            | _                                -> Pending
         )
     )
 
@@ -152,9 +152,9 @@ module Timer =
         Timed.create (fun dt ->
             if obj.ReferenceEquals(tc, null) then
                 match Timed.run dt ta, Timed.run dt tb with
-                | Finished a, Finished b ->
+                | Finished (a,ta), Finished (b,tb) ->
                     tc <- Timed.get (f a b)
-                    Timed.run TimeSpan.Zero tc
+                    Timed.run (min ta tb) tc
                 | _ -> Pending
             else
                 Timed.run dt tc
@@ -168,18 +168,27 @@ module Timer =
     let ParallelMap f timers = Timer(fun () ->
         let timeds = Array.ofSeq (Seq.map Timed.get timers)
         let res    = Array.replicate (Array.length timeds) Pending
-        Timed.create (fun dt ->
-            for idx=0 to timeds.Length-1 do
-                res.[idx] <- Timed.run dt timeds.[idx]
 
-            if Array.forall TimerResult.isFinished res then
-                Finished (Array.map (fun x ->
-                    match x with
-                    | Finished x -> f x
-                    | Pending    -> failwith "Cannot happen"
-                ) res)
-            else Pending
-        )
+        if timeds.Length = 0 then
+            Timed.create (fun dt -> Finished([||],dt))
+        else
+            Timed.create (fun dt ->
+                for idx=0 to timeds.Length-1 do
+                    Array.set res idx (Timed.run dt timeds.[idx])
+
+                if Array.forall TimerResult.isFinished res then
+                    let mutable minimumTime = TimeSpan.MaxValue
+                    let resultArray         = Array.replicate (Array.length timeds) Unchecked.defaultof<_>
+                    for idx=0 to res.Length-1 do
+                        match Array.get res idx with
+                        | Finished (x,t) ->
+                            Array.set resultArray idx (f x)
+                            minimumTime <- min minimumTime t
+                        | Pending -> failwith "Cannot happen"
+                    Finished(resultArray,minimumTime)
+                else
+                    Pending
+            )
     )
 
     // Turns a sequence of timers in a new timer that runs every timer in Parallel. Returning
@@ -189,18 +198,26 @@ module Timer =
 
     // Like ParallelMap, but every timer runs only after the previous timer finished.
     let sequentialMap f timers = Timer(fun () ->
-        let results        = ResizeArray<_>()
-        let mutable timers = List.ofSeq (Seq.map Timed.get timers)
+        let results           = ResizeArray<_>()
+        let mutable restTimer = TimeSpan.Zero
+        let mutable timers    = List.ofSeq (Seq.map Timed.get timers)
         Timed.create(fun dt ->
-            match timers with
-            | []          -> Finished (results.ToArray())
-            | timer::rest ->
-                match Timed.run dt timer with
-                | Pending    -> Pending
-                | Finished x ->
-                    results.Add (f x)
-                    timers <- rest
-                    Pending
+            let rec loop dt =
+                match timers with
+                | []          -> Finished (results.ToArray(), restTimer)
+                | timer::rest ->
+                    let dt =
+                        let newDt = dt + restTimer
+                        restTimer <- TimeSpan.Zero
+                        newDt
+                    match Timed.run dt timer with
+                    | Pending        -> Pending
+                    | Finished (x,t) ->
+                        results.Add (f x)
+                        restTimer <- t
+                        timers    <- rest
+                        loop TimeSpan.Zero
+            loop dt
         )
     )
 
@@ -233,13 +250,12 @@ let runUntilFinished stepTime timer =
     let timed             = Timed.get timer
 
     printfn "Starting..."
-    printfn "  Time: %O" timeSoFar
     let rec loop () =
         timeSoFar <- timeSoFar + stepTime
         printfn "  Time: %O" timeSoFar
         match Timed.run stepTime timed with
-        | Pending    -> loop ()
-        | Finished x -> printfn "Finished: %A" x
+        | Pending        -> loop ()
+        | Finished (x,t) -> printfn "Finished: %A" x
     loop ()
 
 
@@ -254,13 +270,12 @@ let helloToT =
         )
     )
 
-let numA   = Timer.seconds 0.3 (fun () -> 3)
-let numB   = Timer.seconds 0.2 (fun () -> 2)
-let numC   = Timer.seconds 0.7 (fun () -> 5)
-let numD   = Timer.seconds 0.4 (fun () -> 5)
-let numSum = Timer.map4 (fun x y z w -> x + y + z + w) numA numB numC numD
-let numsP  = Timer.Parallel   [numA;numB;numC]
-let numsS  = Timer.sequential [numA;numB;numC]
+let show timer = Timer.map (fun x -> printfn "%A" x; x) timer
+
+let numA   = show (Timer.delay   0.3 (Timer.wrap 3))
+let numB   = show (Timer.seconds 0.2 (fun ()  -> 2))
+let numC   = show (Timer.delay   0.7 (Timer.wrap 7))
+let numD   = show (Timer.seconds 0.4 (fun ()  -> 5))
 
 let sumTimers x y = timer {
     let! x = x
@@ -268,29 +283,35 @@ let sumTimers x y = timer {
     return x + y
 }
 
-let helloWorldX = timer {
-    do! Timer.sleep 0.5
-    printfn "Hello"
-    do! Timer.sleep 0.5
-    printfn "World"
-    return ()
-}
 
-// runUntilFinished helloTimer
-runUntilFinished 0.2 helloWorldTimer
-// runUntilFinished helloToT
-// runUntilFinished (Timer.map (fun (x,y) -> x + y) helloWorldTimer)
-// runUntilFinished numSum
-runUntilFinished 0.2 (numsP |> Timer.map (fun xs -> printfn "Sum: %d" (Array.sum xs)))
-runUntilFinished 0.2 (numsP |> Timer.set "Parallel")
-runUntilFinished 0.2 (numsS |> Timer.set "Sequential")
+runUntilFinished 0.5 helloWorldTimer
+runUntilFinished 0.5 helloToT
+runUntilFinished 0.5 (Timer.map  (fun (x,y)   -> x + y) helloWorldTimer)
+runUntilFinished 0.2 (Timer.map4 (fun x y z w -> x + y + z + w) numA numB numC numD)
+runUntilFinished 0.1 (Timer.Parallel   [numA;numB;numC] |> Timer.set "Parallel 0.3 0.2 0.7")
+runUntilFinished 0.5 (Timer.sequential [numA;numB;numC] |> Timer.set "Sequential 0.3 0.2 0.7")
+runUntilFinished 0.1 (
+    Timer.set "Empty Parallel" (
+        Timer.sequential [
+            show (Timer.Parallel [])
+            show (Timer.delay 0.3 (Timer.wrap [|"Foo"|]))
+        ]
+    )
+)
+runUntilFinished 0.5 (Timer.sequential [] |> Timer.set "Empty Sequential")
 
 runUntilFinished 0.2
     (sumTimers
         (Timer.seconds 0.3 (fun () -> 2))
         (Timer.seconds 0.3 (fun () -> 2)))
 
-runUntilFinished 0.2 helloWorldX
+runUntilFinished 0.2 (timer {
+    do! Timer.sleep 0.5
+    printfn "Hello"
+    do! Timer.sleep 0.5
+    printfn "World"
+    return "Hello World CE"
+})
 
 runUntilFinished 0.2 (timer {
     let! x = Timer.seconds 0.5 (fun () -> 5)
