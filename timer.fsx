@@ -35,14 +35,15 @@ module Timed =
         )
 
 module Timer =
-    // wrap any value into a timer
+    /// wrap any value into a timer
     let wrap x =
         Timer(fun () -> Timed(fun deltaTime -> Finished (x,deltaTime)))
 
+    /// A timer that imidiatelly finishes and returns unit
     let empty =
         wrap ()
 
-    // A function is delayed for the given TimeSpan
+    /// Turns a function into a timer that is delayed for the given TimeSpan
     let create delay f =
         Timer(fun () ->
             let mutable elapsedTime = TimeSpan.Zero
@@ -54,9 +55,9 @@ module Timer =
                     Pending
         ))
 
-    // A function is runned for a duration
-    // It runs on every Timed.run until the duration is reached, then it returns Finished
-    // Through the calls a state is passed and finally returned
+    /// A function is executed for the given duration. A state is passed
+    /// through every invocation the function is runned. When finished, returns
+    /// the final state.
     let duration duration (state:'State) f =
         Timer(fun () ->
             let mutable elapsedTime = TimeSpan.Zero
@@ -71,10 +72,11 @@ module Timer =
             )
         )
 
-    // Same as create, but already expects seconds (in float) instead of TimeSpan
+    /// The same as `create` but expects the seconds instead of a `TimeSpan`
     let seconds seconds f =
         create (TimeSpan.FromSeconds seconds) f
 
+    /// maps a function or let's you work on the inside of a Timer.
     let map f timer =
         Timer(fun () ->
             let timed = Timed.get timer
@@ -84,6 +86,7 @@ module Timer =
                 | Finished (x,t) -> Finished (f x, t)
         ))
 
+    /// binds a function or waits for Timer to finish.
     let bind f timer =
         Timer(fun () ->
             let timedA         = Timed.get timer
@@ -99,18 +102,27 @@ module Timer =
                         Timed.run deltaTime timedB
         ))
 
-    let delay time timer =
+    /// Delays a timer for the specified TimeSpan
+    let delay timeSpan timer =
+        create timeSpan id |> bind (fun () ->
+            timer
+        )
+
+    /// Delays a timer for the specified seconds
+    let delaySeconds time timer =
         seconds time id |> bind (fun () ->
             timer
         )
 
-    // Executes timerA and when it finishes then timerB -- this is sequential
+    /// Executes timerA and then timerB in sequence. Returns values of both
+    /// timers as Tuple.
     let andThen timerA timerB =
         timerA |> bind (fun a ->
         timerB |> bind (fun b ->
             wrap (a,b)
         ))
 
+    /// Flattens a Timer of Timer into a single Timer
     let flatten timer =
         timer |> bind (fun x ->
             x |> bind (fun y ->
@@ -129,13 +141,11 @@ module Timer =
         )
     )
 
-    // map2 -- it runs in parallel - so both timer are executed and as both are resolved the f function is run
+    /// Mapping for two argument function. Or executes a function when both timers finish.
+    /// Both timers run in Parallel.
     let map2 f x y =
         ap (map f x) y
 
-    // map3 -- again in parallel - f function is run as soon all three timers are resolved
-    //      -- so all three timers run in paralel. If you have a timer with "0.2", "0.5" and "1.0" seconds
-    //         delay you get the result after 1.0 seconds NOT 1.7 seconds
     let map3 f x y z =
         ap (map2 f x y) z
 
@@ -145,6 +155,7 @@ module Timer =
     let map5 f x y z a b =
         ap (map4 f x y z a) b
 
+    /// bind for two timers. Both timers run in Parallel and user function returns a new timer.
     let bind2 f x y = Timer(fun () ->
         let ta = Timed.get x
         let tb = Timed.get y
@@ -161,10 +172,8 @@ module Timer =
         )
     )
 
-    // It's like traverse
-    // It turns a sequence of timers into a Timer that runs in parallel. Executing the f function before
-    // the result of every timer is put into the result array.
-    // It's like: Timer.Parallel timers |> Timer.map (Array.map f)
+    /// Runs a sequence of Timers in Parallel and executes the user defined function on every
+    /// result. Returns a Timer containing an array of all results.
     let ParallelMap f timers = Timer(fun () ->
         let timeds = Array.ofSeq (Seq.map Timed.get timers)
         let res    = Array.replicate (Array.length timeds) Pending
@@ -191,12 +200,12 @@ module Timer =
             )
     )
 
-    // Turns a sequence of timers in a new timer that runs every timer in Parallel. Returning
-    // an array of all results.
+    /// Switches the Layers. Turns a sequence of timers into a timer sequence.
     let Parallel timers =
         ParallelMap id timers
 
-    // Like ParallelMap, but every timer runs only after the previous timer finished.
+    /// Turns a sequence of timers into a timer that runs every timer sequential and returns
+    /// the result of every timer as an array. Additionally maps the result.
     let sequentialMap f timers = Timer(fun () ->
         let results           = ResizeArray<_>()
         let mutable restTimer = TimeSpan.Zero
@@ -221,13 +230,20 @@ module Timer =
         )
     )
 
+    /// Switches layers and turns a sequence of timers into a timer array. But runs every
+    /// timer one after another.
     let sequential timer =
         sequentialMap id timer
 
-    // A Timer that just sleeps for some time
-    let sleep sec =
+    /// A timer that just sleeps for a given time
+    let sleep time =
+        create time id
+
+    /// A timer that sleeps for the given seconds
+    let sleepSeconds sec =
         seconds sec id
 
+    /// Overwrites the result of a Timer
     let set x timer =
         timer |> map (fun _ -> x)
 
@@ -272,17 +288,16 @@ let helloToT =
 
 let show timer = Timer.map (fun x -> printfn "%A" x; x) timer
 
-let numA   = show (Timer.delay   0.3 (Timer.wrap 3))
-let numB   = show (Timer.seconds 0.2 (fun ()  -> 2))
-let numC   = show (Timer.delay   0.7 (Timer.wrap 7))
-let numD   = show (Timer.seconds 0.4 (fun ()  -> 5))
+let numA   = show (Timer.delaySeconds 0.3 (Timer.wrap 3))
+let numB   = show (Timer.seconds      0.2 (fun ()  -> 2))
+let numC   = show (Timer.delaySeconds 0.7 (Timer.wrap 7))
+let numD   = show (Timer.seconds      0.4 (fun ()  -> 5))
 
 let sumTimers x y = timer {
     let! x = x
     and! y = y
     return x + y
 }
-
 
 runUntilFinished 0.5 helloWorldTimer
 runUntilFinished 0.5 helloToT
@@ -294,7 +309,7 @@ runUntilFinished 0.1 (
     Timer.set "Empty Parallel" (
         Timer.sequential [
             show (Timer.Parallel [])
-            show (Timer.delay 0.3 (Timer.wrap [|"Foo"|]))
+            show (Timer.delaySeconds 0.3 (Timer.wrap [|"Foo"|]))
         ]
     )
 )
@@ -306,9 +321,9 @@ runUntilFinished 0.2
         (Timer.seconds 0.3 (fun () -> 2)))
 
 runUntilFinished 0.2 (timer {
-    do! Timer.sleep 0.5
+    do! Timer.sleepSeconds 0.5
     printfn "Hello"
-    do! Timer.sleep 0.5
+    do! Timer.sleepSeconds 0.5
     printfn "World"
     return "Hello World CE"
 })
@@ -325,7 +340,7 @@ runUntilFinished 0.2 (
 )
 
 runUntilFinished 0.2 (
-    Timer.wrap "Delayed" |> Timer.delay 0.8
+    Timer.wrap "Delayed" |> Timer.delaySeconds 0.8
 )
 
 // Simulating a 60fps gameTime
