@@ -3,21 +3,21 @@
 open System
 open FSExtensions
 
+type Source = {
+    Source:   string
+    Position: int
+}
+
+type ParserResult<'a> =
+    | Matched    of result:  'a  * source:Source
+    | NotMatched of position:int * error: string
+
+type Parser<'a> = {
+    Label: string
+    Fn:    Source -> ParserResult<'a>
+}
+
 module Parser =
-    type Source = {
-        Source:   string
-        Position: int
-    }
-
-    type ParserResult<'a> =
-        | Matched    of result:  'a  * source:Source
-        | NotMatched of position:int * error: string
-
-    type Parser<'a> = {
-        Label: string
-        Fn:    Source -> ParserResult<'a>
-    }
-
     module Source =
         let create source position =
             let source = if source = null then "" else source
@@ -77,7 +77,7 @@ module Parser =
     let parse parser string =
         run parser (Source.create string 1)
 
-    let value x =
+    let wrap x =
         create "Value" (fun input ->
             Matched (x,input)
         )
@@ -98,9 +98,9 @@ module Parser =
 
     type ParserBuilder() =
         member _.Bind(p,f)     = bind f p
-        member _.Return(x)     = value x
+        member _.Return(x)     = wrap x
         member _.ReturnFrom(p) = p
-        member _.Zero()        = value ()
+        member _.Zero()        = wrap ()
 
     let parser = new ParserBuilder ()
 
@@ -149,14 +149,14 @@ module Parser =
     let apply pf px =
         pf |> bind (fun f ->
         px |> bind (fun x ->
-            value (f x)
+            wrap (f x)
         ))
         |> setLabel (getLabel px)
 
     let andThen p1 p2 =
         p1 |> bind (fun x1 ->
         p2 |> bind (fun x2 ->
-            value (x1,x2)
+            wrap (x1,x2)
         ))
         |> setLabel (sprintf "(%s) andThen (%s)" (getLabel p1) (getLabel p2))
 
@@ -185,8 +185,8 @@ module Parser =
 
     let traverse f ps =
         let folder x xs =
-            apply (apply (value (fun h t -> (f h) :: t)) x) xs
-        Seq.foldBack folder ps (value [])
+            map2 (fun h t -> (f h) :: t) x xs
+        Seq.foldBack folder ps (wrap [])
 
     let sequence ps = traverse id ps
 
@@ -227,7 +227,7 @@ module Parser =
     let many1 parser =
         parser      |> bind (fun x1 ->
         many parser |> bind (fun rest ->
-            value (x1 :: rest)
+            wrap (x1 :: rest)
         ))
         |> setLabel (sprintf "Many1 (%s)" (getLabel parser))
 
@@ -244,7 +244,7 @@ module Parser =
         |> setLabel "Newline"
 
     let maybe parser =
-        orElse (map Some parser) (value None)
+        orElse (map Some parser) (wrap None)
 
     let defaultValue value parser =
         map (fun p -> Option.defaultValue value p ) parser
@@ -288,7 +288,7 @@ module Parser =
     }
 
     let seperatedBy sep p =
-        orElse (seperatedBy1 sep p) (value [])
+        orElse (seperatedBy1 sep p) (wrap [])
 
     let between opener closer x =
         andThenRight opener (andThenLeft x closer)

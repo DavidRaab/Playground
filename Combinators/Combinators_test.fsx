@@ -1,4 +1,4 @@
-#!/usr/bin/env -S dotnet fsi
+#!/usr/bin/env -S dotnet fsi --optimize+ --multiemit-
 #r "nuget: Expecto"
 #load "Combinators.fsx"
 #load "../FSExtensions.fsx"
@@ -11,8 +11,8 @@ module P = Parser
 
 let matched m rest result =
     match result with
-    | Parser.Matched (r,src)      -> r = m && src.Source = rest
-    | Parser.NotMatched (pos,err) -> false
+    | Matched (r,src)      -> r = m && src.Source = rest
+    | NotMatched (pos,err) -> false
 
 let isMatch m rest msg result =
     matched m rest result
@@ -20,8 +20,8 @@ let isMatch m rest msg result =
 
 let isNotMatch msg result =
     match result with
-    | P.Matched _            -> Expect.isTrue msg false
-    | P.NotMatched (pos,msg) -> Expect.isTrue msg true
+    | Matched _            -> Expect.isTrue msg false
+    | NotMatched (pos,msg) -> Expect.isTrue msg true
 
 let testPchar = test "pchar" {
     let parseA = P.char 'a'
@@ -213,7 +213,7 @@ let lineCounting = test "Line/Column Counting" {
 
     let got = Parser.parse mabcd "abcd\nabcd\r\nabcd\nfoo"
     let expected =
-        Parser.Matched (
+        Matched (
             [["abcd";"\n"];["abcd";"\r\n"];["abcd";"\n"]],
             Parser.Source.create "foo" 17
         )
@@ -352,31 +352,31 @@ let testSep = test "Seperator" {
 
 let testErrorMessages = test "ErrorMessages" {
     Parser.parse (P.char 'a') "bac"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Char a Got: b"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Char a Got: b"))
 
     Parser.parse P.any ""
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Any Got: Empty String"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Any Got: Empty String"))
 
     Parser.parse P.digit "HAB"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Digit Got: H"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Digit Got: H"))
 
     Parser.parse P.word "123"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Word Got: 1"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Word Got: 1"))
 
     Parser.parse P.whitespace "foo"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Whitespace Got: f"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Whitespace Got: f"))
 
     Parser.parse P.newline "klo"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Newline Got: k"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Newline Got: k"))
 
     Parser.parse P.integer "abc1234"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Integer Got: a"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Integer Got: a"))
 
     Parser.parse P.ws "troja"
-    |> Expect.equal "" (P.NotMatched (1, "Expected: Many1 (Whitespace) Got: t"))
+    |> Expect.equal "" (NotMatched (1, "Expected: Many1 (Whitespace) Got: t"))
 }
 
-runTestsWithCLIArgs [] Cli.args (testList "main" [
+runTestsWithCLIArgs [] (Array.skip 2 Cli.args) (testList "main" [
     testPchar
     testOrElse
     testAndThen
