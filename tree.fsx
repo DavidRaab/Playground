@@ -55,15 +55,15 @@ module Tree =
         | Node2(Empty,x,Empty) ->
             if value <= x then n3 value x else n3 x value
         | Node2(IsNode4 a,x,b) when value <= x ->
-                match add value a with
-                | Node2(c1,y,c2) -> node3 c1 y c2 x b
-                | a              -> node2 a x b
+            match add value a with
+            | Node2(c1,y,c2) -> node3 c1 y c2 x b
+            | a              -> node2 a x b
         | Node2(a,x,b) when value <= x ->
             node2 (add value a) x b
         | Node2(a,x,IsNode4 b) when value > x ->
-                match add value b with
-                | Node2(c1,y,c2) -> node3 a x c1 y c2
-                | b              -> node2 a x b
+            match add value b with
+            | Node2(c1,y,c2) -> node3 a x c1 y c2
+            | b              -> node2 a x b
         | Node2(a,x,b) ->
             node2 a x (add value b)
         | Node3(Empty,x,Empty,y,Empty) ->
