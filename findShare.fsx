@@ -1,3 +1,5 @@
+#!/usr/bin/env -S dotnet fsi
+
 #load "FSExtensions.fsx"
 open FSExtensions
 open System.Collections.Generic
@@ -124,10 +126,10 @@ let a5 = List.lift3 add3 [2;4] [6;7] [20;30]
 // And it also works great for any other types. Assume we want to use `add3`
 // But we have lists, options or asyncs.
 
-let m1 =              add3 1             2             3
-let m2 = Option.map3  add3 (Some 1)      (Some 2)      (Some 3)
-let m3 = List.lift3   add3 [1;2;3]       [4;5;6]       [7;8;9]
-let m4 = Async.map3   add3 (Async.one 1) (Async.one 2) (Async.one 3)
+let m1 =              add3 1              2              3
+let m2 = Option.map3  add3 (Some 1)       (Some 2)       (Some 3)
+let m3 = List.lift3   add3 [1;2;3]        [4;5;6]        [7;8;9]
+let m4 = Async.map3   add3 (Async.wrap 1) (Async.wrap 2) (Async.wrap 3)
 
 // Another idea is to just use those function to create a new function with
 // all its arguments lifted. So for example

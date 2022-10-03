@@ -2,10 +2,9 @@ module FSExtensions
 
 type System.Int32 with
     static member tryParse (str:string) =
-        let mutable value = 0
-        match System.Int32.TryParse(str,&value) with
-        | true  -> Some value
-        | false -> None
+        match System.Int32.TryParse(str) with
+        | true, value-> Some value
+        | false, _   -> None
 
     static member tryParseHex (str:string) =
         let mutable value = 0
@@ -35,24 +34,36 @@ type System.Int32 with
 
 type System.Single with
     static member tryParse (str:string) =
-        let mutable value = 0.0f
-        match System.Single.TryParse(str,&value) with
-        | true  -> Some value
-        | false -> None
+        match System.Single.TryParse(str) with
+        | true , value -> Some value
+        | false, _     -> None
 
 type System.Double with
     static member tryParse (str:string) =
-        let mutable value = 0.0
-        match System.Double.TryParse(str,&value) with
-        | true  -> Some value
-        | false -> None
+        match System.Double.TryParse str with
+        | true , value -> Some value
+        | false, _     -> None
 
 type System.Collections.Generic.Stack<'a> with
     static member tryPop(stack:System.Collections.Generic.Stack<_>) =
-        let mutable x = Unchecked.defaultof<_>
-        match stack.TryPop(&x) with
-        | false -> ValueNone
-        | true  -> ValueSome x
+        match stack.TryPop() with
+        | true , x -> ValueSome x
+        | false, _ -> ValueNone
+
+module Array =
+    let shuffle_random = System.Random()
+    let shuffle array =
+        if Array.isEmpty array then [||] else
+            let array = Array.copy array
+            let max = Array.length array
+            for i=0 to max-1 do
+                let ni = shuffle_random.Next max
+                let tmp = array.[ni]
+                array.[ni] <- array.[i]
+                array.[i]  <- tmp
+            array
+
+
 
 module List =
     let lift = List.map
@@ -104,7 +115,7 @@ module ValueOption =
         | ValueSome x -> Some x
 
 module Async =
-    let one x = async { return x }
+    let wrap x = async { return x }
 
     let bind f x = async {
         let! x = x
