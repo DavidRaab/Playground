@@ -7,8 +7,11 @@ type Heap<'a when 'a : comparison>(?depth) =
     let mutable depth    = defaultArg depth 4
     let mutable maxCount = int (2.0 ** float depth) - 1
     let mutable count    = 0
+    // heap is a tree stored as an Array. The size must be power of 2.
+    // First element is stored at index 1, not 0.
     let mutable heap     = Array.zeroCreate<'a> (maxCount + 1)
 
+    // Functions that returns the parent, left- or right-child index from the given index
     let parent x = x / 2
     let left   x = 2 * x
     let right  x = 2 * x + 1
@@ -28,6 +31,7 @@ type Heap<'a when 'a : comparison>(?depth) =
         show 1
 
     member _.Add x =
+        // Allocate/Copy memory if capacity is not enough
         if count+1 > maxCount then
             depth    <- depth + 1
             maxCount <- int (2.0 ** float depth) - 1
@@ -35,10 +39,11 @@ type Heap<'a when 'a : comparison>(?depth) =
             Array.blit heap 1 newHeap 1 count
             heap <- newHeap
 
+        // Add element to the end
         heap.[count+1] <- x
         count <- count + 1
 
-        // Restore heap-structure
+        // then restore heap property by moving element up as needed
         let rec loop idx =
             if idx = 1 then () else
                 let c = heap.[idx]
@@ -60,13 +65,16 @@ type Heap<'a when 'a : comparison>(?depth) =
         if count = 0 then
             ValueNone
         else
-            let max = ValueSome heap.[1]
+            // Save Min value we want to remove
+            let min = ValueSome heap.[1]
 
+            // swap last value with the top of the tree
             heap.[1]     <- heap.[count]
             heap.[count] <- Unchecked.defaultof<_>
             count        <- count - 1
 
-            // restore Heap-structure
+            // restore Heap-structure by moving the top down the tree as needed
+            // by swaping it with the smaller left/right child.
             let rec loop idx =
                 let current = heap.[idx]
 
@@ -91,7 +99,9 @@ type Heap<'a when 'a : comparison>(?depth) =
                         heap.[left idx] <- current
                         loop (left idx)
             loop 1
-            max
+
+            // Return minimum
+            min
 
 // Generate a shuffled Array
 let array = Array.shuffle [|1..100|]
