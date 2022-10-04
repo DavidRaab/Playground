@@ -122,6 +122,19 @@ type Heap<'a>(comparer, ?depth) =
         loop 0
         array
 
+    /// Prints a GraphViz Dot file. Output can be turned into PNG,SVG,PS,PDF,... and so on.
+    /// Use `dot input.dot -Tps -o output.ps`
+    member _.Dot (show: 'a -> string) =
+        let sb = System.Text.StringBuilder()
+        let rec loop idx =
+            // Escaping not 100% right; but it's okay for the moment
+            sb.Append (sprintf "  %d [label=\"%s\"];" idx ((show heap.[idx]).Replace("\"", "\\\""))) |> ignore
+            if left idx  <= count then sb.Append (sprintf "%d -> %d;\n" idx (left idx))  |> ignore; loop (left idx)
+            if right idx <= count then sb.Append (sprintf "%d -> %d;\n" idx (right idx)) |> ignore; loop (right idx)
+        loop 1
+        sprintf "digraph TREE {\n%s\n}\n" (sb.ToString())
+
+
 // Generate a shuffled Array
 let array = Array.shuffle [|1..100|]
 printfn "Shuffled Array: %A\n" array
@@ -164,6 +177,8 @@ let data = [
 
 let dataASC = Heap(fun (x,_) (y,_) -> ascending x y)
 dataASC.AddMany data
+// Print GraphViz Dot File
+printfn "%s" (dataASC.Dot (sprintf "%A"))
 // Turn Heap into Array, use only the second element of tuple and concatenate result
 let str = dataASC.ToArray() |> Array.map snd |> String.concat ""
 printfn "Data: %s" str
