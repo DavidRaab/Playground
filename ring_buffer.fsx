@@ -1,6 +1,6 @@
 #!/usr/bin/env -S dotnet fsi
 
-#load "RingBuffer.fs"
+#load "Lib/RingBuffer.fs"
 open RingBuffer
 
 let buf = RingBuffer(5)

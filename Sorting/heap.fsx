@@ -1,8 +1,8 @@
 #!/usr/bin/env -S dotnet fsi
 
-#load "../FSExtensions.fsx"
-#load "../data-structures/Heap.fs"
-open FSExtensions
+#load "../Lib/Extensions.fs"
+#load "../Lib/Heap.fs"
+open Extensions
 open Heap
 
 // Generate a shuffled Array
