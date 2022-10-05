@@ -73,6 +73,15 @@ type RingBuffer<'a>(capacity) =
         for x in xs do
             this.Unshift x
 
+    member this.Get idx =
+        if idx < 0 then
+            buffer.[(start + buffer.Length + (idx % buffer.Length)) % buffer.Length]
+        else
+            buffer.[(start + idx) % buffer.Length]
+
+    member this.Item idx =
+        this.Get idx
+
     member this.Foldi f (state:'State) =
         let rec loop state countSoFar idx =
             if countSoFar = count then
@@ -221,3 +230,6 @@ let bufL  = buf.FoldBack (fun x xs -> x :: xs) []
 printfn "List Buf:  %A" bufL
 let copyL = copy.FoldBack (fun x xs -> x :: xs) []
 printfn "List Copy: %A" copyL
+
+for i= -10 to 10 do
+    printfn "Buf Get(%d): %A" i (buf.[i])
