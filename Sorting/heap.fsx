@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
-#load "FSExtensions.fsx"
-#load "data-structures/Heap.fs"
+#load "../FSExtensions.fsx"
+#load "../data-structures/Heap.fs"
 open FSExtensions
 open Heap
 
