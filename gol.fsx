@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
-#load "LibGameOfLife.fsx"
-open LibGameOfLife
+#load "Lib/GameOfLife.fs"
+open GameOfLife
 
 module View =
     let asChar state =
@@ -11,7 +11,7 @@ module View =
 
     let asString game =
         let sb  = System.Text.StringBuilder()
-        Game.iteri 
+        Game.iteri
             (fun x y state -> ignore (sb.Append (asChar state)))
             (fun y -> ignore (sb.Append '\n'))
             game
@@ -37,7 +37,7 @@ let main argv =
 
     let sleepTime, init =
         match Array.toList argv with
-        | [] -> 
+        | [] ->
             failwith "Error: Provide a filename"
         | file::[] ->
             let sleepTime = 100

@@ -1,3 +1,5 @@
+namespace GameOfLife
+
 module Game =
     [<Struct>]
     type State =
@@ -25,7 +27,7 @@ module Game =
         Columns   = cols
         Field     = createField init (cols+2) (rows+2)
     }
-    
+
     let fromSeq outOfRange seqOfSeq =
         let maxY = Seq.length seqOfSeq
         let maxX = Seq.max (Seq.map Seq.length seqOfSeq)
@@ -37,7 +39,7 @@ module Game =
             )
         )
         game
-    
+
     let fromStr outOfRange (str:string) =
         str.Split [|'\n'|]
         |> Array.map (fun str -> [|
@@ -48,10 +50,10 @@ module Game =
         |])
         |> Array.filter (fun xs -> Array.length xs > 0)
         |> fromSeq outOfRange
-   
+
     let get x y game =
         game.Field.[y,x]
-    
+
     let iteri forCell forRow game =
         for y=1 to rows game do
             for x=1 to cols game do
@@ -72,7 +74,7 @@ module Game =
         + stateToNum (get (x-1) (y+1) game)
         + stateToNum (get (x)   (y+1) game)
         + stateToNum (get (x+1) (y+1) game)
-    
+
     let map f game =
         let newGame = create game.InitState game.Columns game.Rows
         for y=1 to rows game do
