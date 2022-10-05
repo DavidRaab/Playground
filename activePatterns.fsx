@@ -1,6 +1,7 @@
+#!/usr/bin/env -S dotnet fsi
 
-#load "FSExtensions.fsx"
-open FSExtensions
+#load "Lib/Extensions.fs"
+open Extensions
 
 type Person = {
     Name: string
@@ -11,7 +12,7 @@ and Sex =
     | Male
     | Female
 
-type Freimaurer = 
+type Freimaurer =
     Freimaurer of level:Level * person:Person
 and Level =
     | Novice
@@ -59,7 +60,7 @@ let persons = [
 let frei       = List.map    (fun p -> toFreimaurer p, p) persons
 let freimaurer = List.choose (Result.tryOk << fst) frei
 
-frei |> List.iter (fun (frei,person) -> 
+frei |> List.iter (fun (frei,person) ->
     match frei with
     | Ok (Freimaurer (level,p)) -> printfn "Welcome %s to the Freimaurer as %A" p.Name level
     | Error Women               -> printfn "We don't like women like %s" person.Name
@@ -73,7 +74,7 @@ for frei,person in frei do
     | Error TooYoung            -> printfn "Soory, %s you are too young" person.Name
 
 
-freimaurer 
+freimaurer
 |> List.map upgrade
 |> List.iter (fun (Freimaurer (level, {Name = name})) ->
     printfn "Welcome %s to the Freimaurer as %A" name level

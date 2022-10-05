@@ -1,5 +1,6 @@
-#load "FSExtensions.fsx"
-open FSExtensions
+#!/usr/bin/env -S dotnet fsi
+#load "Lib/Extensions.fs"
+open Extensions
 
 let tryParseInt = System.Int32.tryParse
 

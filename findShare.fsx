@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
-#load "FSExtensions.fsx"
-open FSExtensions
+#load "Lib/Extensions.fs"
+open Extensions
 open System.Collections.Generic
 
 let (|IsSmaller|_|) target x = if x < target then Some x else None

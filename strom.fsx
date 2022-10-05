@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
-#load "FSExtensions.fsx"
+#load "Lib/Extensions.fs"
 #r "nuget: Plotly.NET, 2.0.0-preview.6"
-open FSExtensions
+open Extensions
 
 open System
 open System.Text.RegularExpressions
