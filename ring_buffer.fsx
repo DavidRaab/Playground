@@ -8,18 +8,21 @@ open Test
 let bufferIs (buffer:RingBuffer<'a>) expected name =
     Test.is (buffer.ToArray()) expected name
 
+let checkBuffer (buffer:array<_>) capacity name buf =
+    let count = buffer.Length
+    bufferIs buf buffer           (sprintf "%s Content" name)
+    Test.is buf.Count    count    (sprintf "%s Count" name)
+    Test.is buf.Capacity capacity (sprintf "%s Capacity" name)
+
+
 let buf = RingBuffer(5)
-
-Test.is buf.Capacity 5 "Capacity 1"
-Test.is buf.Count    0 "Count 1"
+buf |> checkBuffer [||] 5 "Empty"
 buf.Push 1
-Test.is buf.Capacity 5 "Capacity 2"
-Test.is buf.Count    1 "Count 2"
+buf |> checkBuffer [|1|] 5 "Push 1"
 buf.Push 1
-Test.is buf.Count    2 "Count 3"
+buf |> checkBuffer [|1;1|] 5 "Push 2"
 buf.PushMany [1..10]
-Test.is buf.Count    5 "Count 4"
-
+buf |> checkBuffer [|6..10|] 5 "PushMany"
 
 buf.PushMany [5;10;15;20;25]
 bufferIs buf [|5;10;15;20;25|] "First Push Many"
@@ -125,7 +128,7 @@ Test.is one.Count    0 "Empty Buffer with count 0"
 Test.is one.Capacity 1 "Empty Buffer with 1 capacity"
 bufferIs one [||] "Empty Buffer"
 one.Push 1
-bufferIs one [|1|] "nne buf with 1"
+bufferIs one [|1|] "one buf with 1"
 one.Push 2
 bufferIs one [|2|] "one buf with 2"
 one.PushMany [3;4;5]
@@ -137,5 +140,21 @@ Test.throws (fun () ->
     let empty = RingBuffer<int>(0)
     ()
 ) "Capacity zero not allowed"
+
+
+let three = RingBuffer(3, [1..10])
+three |> checkBuffer [|8;9;10|] 3 "CWL1"
+three.Push 11
+three |> checkBuffer [|9;10;11|] 3 "Push on CWL1"
+
+let tweenty = RingBuffer(20, [1..10])
+tweenty |> checkBuffer [|1..10|] 20 "CWL2"
+tweenty.Push 11
+tweenty |> checkBuffer [|1..11|] 20 "Push on CWL2"
+
+let ten = RingBuffer(10, [1..10])
+ten |> checkBuffer [|1..10|] 10 "CWL3"
+ten.Push 11
+ten |> checkBuffer [|2..11|] 10 "Push on CWL3"
 
 Test.doneTesting ()

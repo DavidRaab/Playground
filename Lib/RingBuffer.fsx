@@ -8,8 +8,25 @@ type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
 
     new(capacity) =
         if capacity <= 0 then
-            invalidArg "capacity" "Capacity muss be greater 0."
+            invalidArg "capacity" "Capacity must be greater 0."
         RingBuffer(Array.zeroCreate<'a> capacity, 0, 0, 0)
+
+    new(capacity,init) =
+        if capacity <= 0 then
+            invalidArg "capacity" "Capacity must be greater 0."
+
+        let init = Seq.toArray init
+        if capacity = init.Length then
+            RingBuffer(init, 0, 0, capacity)
+        elif capacity > init.Length then
+            let buffer = Array.zeroCreate capacity
+            Array.blit init 0 buffer 0 init.Length
+            RingBuffer(buffer, 0, init.Length, init.Length)
+        else
+            let offset = init.Length - capacity
+            let buffer = Array.zeroCreate capacity
+            Array.blit init offset buffer 0 capacity
+            RingBuffer(buffer, 0, 0, capacity)
 
     member this.Count    = count
     member this.Capacity = capacity
