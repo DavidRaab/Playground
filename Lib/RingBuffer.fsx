@@ -35,13 +35,13 @@ type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
 
     /// Add an element to the Ring Buffer. If capacity is reached oldest entry is over-written. O(1)
     member this.Push x =
-        if count = buffer.Length then
+        if count = capacity then
             buffer.[stop] <- x
-            start <- (start + 1) % buffer.Length
-            stop  <- (stop  + 1) % buffer.Length
+            start <- (start + 1) % capacity
+            stop  <- (stop  + 1) % capacity
         else
             buffer.[stop] <- x
-            stop  <- (stop + 1) % buffer.Length
+            stop  <- (stop + 1) % capacity
             count <- count + 1
 
     /// Removes Last element of the Ring Buffer. O(1)
@@ -103,7 +103,7 @@ type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
                 count - (idx + 1)
             else
                 idx
-        buffer.[(start + (idx % count)) % buffer.Length ]
+        buffer.[(start + (idx % count)) % capacity]
 
     member this.Set idx x =
         let idx =
@@ -112,7 +112,7 @@ type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
                 count - (idx + 1)
             else
                 idx
-        buffer.[(start + (idx % count)) % buffer.Length] <- x
+        buffer.[(start + (idx % count)) % capacity] <- x
 
     member this.Item
         with get idx   = this.Get idx
@@ -194,7 +194,7 @@ type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
             Array.blit buffer start array 0 count
             array
         else
-            let countToStop = buffer.Length - start
+            let countToStop = capacity - start
             Array.blit buffer start array 0            countToStop
             Array.blit buffer 0     array countToStop (count - countToStop)
             array
