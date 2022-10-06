@@ -157,4 +157,7 @@ ten |> checkBuffer [|1..10|] 10 "CWL3"
 ten.Push 11
 ten |> checkBuffer [|2..11|] 10 "Push on CWL3"
 
+let five = RingBuffer(5, ten)
+five |> checkBuffer [|7..11|] 5 "Five"
+
 Test.doneTesting ()

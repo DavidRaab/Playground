@@ -6,11 +6,13 @@ type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
     let mutable stop  = stop
     let mutable count = count
 
+    /// Creates an empty RingBuffer with given capacity
     new(capacity) =
         if capacity <= 0 then
             invalidArg "capacity" "Capacity must be greater 0."
         RingBuffer(Array.zeroCreate<'a> capacity, 0, 0, 0)
 
+    /// Creates a RingBuffer and uses init for initialization
     new(capacity,init) =
         if capacity <= 0 then
             invalidArg "capacity" "Capacity must be greater 0."
