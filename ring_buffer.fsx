@@ -135,7 +135,7 @@ bufferIs one [||] "one is empty again"
 
 Test.throws (fun () ->
     let empty = RingBuffer<int>(0)
-    empty.Push 5
+    ()
 ) "Capacity zero not allowed"
 
 Test.doneTesting ()
