@@ -1,13 +1,15 @@
-type RingBuffer<'a>(capacity) =
-    let buffer        = Array.zeroCreate<'a> capacity
+type RingBuffer<'a>(buffer:'a array, start:int, stop:int, count:int) =
+    let buffer        = buffer //Array.zeroCreate<'a> capacity
     let maxIdx        = buffer.Length - 1
-    let mutable start = 0
-    let mutable stop  = 0
-    let mutable count = 0
+    let capacity      = buffer.Length
+    let mutable start = start
+    let mutable stop  = stop
+    let mutable count = count
 
-    do
+    new(capacity) =
         if capacity <= 0 then
             invalidArg "capacity" "Capacity muss be greater 0."
+        RingBuffer(Array.zeroCreate<'a> capacity, 0, 0, 0)
 
     member this.Count    = count
     member this.Capacity = capacity
@@ -132,9 +134,7 @@ type RingBuffer<'a>(capacity) =
 
     /// Creates a shallow copy of the Ring Buffer. O(N)
     member this.Copy () =
-        RingBuffer(capacity) |> this.Fold (fun buf x ->
-            buf.Push x; buf
-        )
+        RingBuffer(Array.copy buffer, start, stop, count)
 
     member private this.getEnumerator () =
         let mutable countSoFar = 0
