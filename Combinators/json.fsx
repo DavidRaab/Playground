@@ -1,6 +1,6 @@
 #load "Combinators.fsx"
 open Combinators
-open FSExtensions
+open Extensions
 
 type Json =
     | JsonNull

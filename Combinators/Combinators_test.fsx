@@ -1,8 +1,8 @@
 #!/usr/bin/env -S dotnet fsi --optimize+ --multiemit-
 #r "nuget: Expecto"
 #load "Combinators.fsx"
-#load "../FSExtensions.fsx"
-open FSExtensions
+#load "../Lib/Extensions.fs"
+open Extensions
 open Combinators
 open Expecto
 open Expecto.Flip

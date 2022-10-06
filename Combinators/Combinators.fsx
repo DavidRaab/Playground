@@ -1,7 +1,7 @@
-#load "../FSExtensions.fsx"
+#load "../Lib/Extensions.fs"
 
 open System
-open FSExtensions
+open Extensions
 
 type Source = {
     Source:   string

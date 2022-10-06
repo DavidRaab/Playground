@@ -4,7 +4,7 @@ open Expecto
 open Expecto.Flip
 
 #load "json.fsx"
-open FSExtensions
+open Extensions
 open Json
 open Combinators
 
@@ -13,16 +13,16 @@ module P = Parser
 // Helper Functions
 let isMatch m rest msg result =
     match result with
-    | Parser.Matched (r,src)      -> 
+    | ParserResult.Matched (r,src)      ->
         Expect.equal msg m r
         Expect.equal msg rest src.Source
-    | Parser.NotMatched _ ->
+    | ParserResult.NotMatched _ ->
         Expect.isTrue msg false
 
 let isNotMatch msg result =
     match result with
-    | P.Matched _            -> Expect.isTrue msg false
-    | P.NotMatched (pos,msg) -> Expect.isTrue msg true
+    | ParserResult.Matched _            -> Expect.isTrue msg false
+    | ParserResult.NotMatched (pos,msg) -> Expect.isTrue msg true
 
 
 
@@ -84,7 +84,7 @@ let single = test "Single" {
 
 
 let complex = test "Complex" {
-    let input  = """{ 
+    let input  = """{
         "Name":      "Raab",
         "FirstName": "David",
         "Greatness": 9999.99,
@@ -97,7 +97,7 @@ let complex = test "Complex" {
             "Breasts":   "Big"
         }
     }"""
-    
+
 
     let output = JsonObject(Map [
         "Name",      JsonString("Raab")
