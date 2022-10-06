@@ -1,5 +1,3 @@
-namespace RingBuffer
-
 type RingBuffer<'a>(capacity) =
     let buffer        = Array.zeroCreate<'a> capacity
     let maxIdx        = buffer.Length - 1

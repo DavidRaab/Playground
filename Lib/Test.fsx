@@ -1,5 +1,3 @@
-namespace Test
-
 module Test =
     let mutable testsSoFar = 0
 

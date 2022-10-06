@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
-#load "Lib/RingBuffer.fs"
-#load "Lib/Test.fs"
+#load "Lib/RingBuffer.fsx"
+#load "Lib/Test.fsx"
 open RingBuffer
 open Test
 
