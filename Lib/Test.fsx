@@ -19,5 +19,19 @@ module Test =
             printfn "#          got: %A" got
             printfn "#     expected: %A" expected
 
+    let throws f name =
+        let mutable throws = false
+        try
+            f ()
+        with
+        | _ -> throws <- true
+
+        testsSoFar <- testsSoFar + 1
+        if throws
+        then printfn "ok %d - %s" testsSoFar name
+        else printfn "not ok %d - %s" testsSoFar name
+
+
+
     let doneTesting () =
         plan testsSoFar

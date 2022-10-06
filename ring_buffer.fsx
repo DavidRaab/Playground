@@ -120,4 +120,22 @@ bufferIs buf [|1;2;300|]   "NFB Set 2"
 buf.[2] <- 3
 bufferIs buf [|1;2;3|]     "NFB Set 3"
 
+let one = RingBuffer(1)
+Test.is one.Count    0 "Empty Buffer with count 0"
+Test.is one.Capacity 1 "Empty Buffer with 1 capacity"
+bufferIs one [||] "Empty Buffer"
+one.Push 1
+bufferIs one [|1|] "nne buf with 1"
+one.Push 2
+bufferIs one [|2|] "one buf with 2"
+one.PushMany [3;4;5]
+bufferIs one [|5|] "one buf with 5"
+Test.is (one.Shift()) (ValueSome 5) "5 shift of one buf"
+bufferIs one [||] "one is empty again"
+
+Test.throws (fun () ->
+    let empty = RingBuffer<int>(0)
+    empty.Push 5
+) "Capacity zero not allowed"
+
 Test.doneTesting ()

@@ -5,6 +5,10 @@ type RingBuffer<'a>(capacity) =
     let mutable stop  = 0
     let mutable count = 0
 
+    do
+        if capacity <= 0 then
+            invalidArg "capacity" "Capacity muss be greater 0."
+
     member this.Count    = count
     member this.Capacity = capacity
 
@@ -16,7 +20,7 @@ type RingBuffer<'a>(capacity) =
             stop  <- (stop  + 1) % buffer.Length
         else
             buffer.[stop] <- x
-            stop <- (stop + 1) % buffer.Length
+            stop  <- (stop + 1) % buffer.Length
             count <- count + 1
 
     /// Removes Last element of the Ring Buffer. O(1)
