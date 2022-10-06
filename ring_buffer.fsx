@@ -9,6 +9,18 @@ let bufferIs (buffer:RingBuffer<'a>) expected name =
     Test.is (buffer.ToArray()) expected name
 
 let buf = RingBuffer(5)
+
+Test.is buf.Capacity 5 "Capacity 1"
+Test.is buf.Count    0 "Count 1"
+buf.Push 1
+Test.is buf.Capacity 5 "Capacity 2"
+Test.is buf.Count    1 "Count 2"
+buf.Push 1
+Test.is buf.Count    2 "Count 3"
+buf.PushMany [1..10]
+Test.is buf.Count    5 "Count 4"
+
+
 buf.PushMany [5;10;15;20;25]
 bufferIs buf [|5;10;15;20;25|] "First Push Many"
 buf.PushMany [30]
@@ -32,14 +44,17 @@ Test.is (buf.Pop()) (ValueSome 35) "Pop 5"
 Test.is (buf.Pop()) (ValueNone)    "Pop 6"
 
 buf.PushMany [70;75;80]
-
 bufferIs buf [|70;75;80|]
 Test.is (buf.Shift()) (ValueSome 70) "Shift 1"
 Test.is (buf.Shift()) (ValueSome 75) "Shift 2"
 bufferIs buf [|80|] "one element"
 
-buf.PushMany [85;90]
+Test.is (buf.Shift()) (ValueSome 80) "Shift 3"
+Test.is (buf.Shift()) (ValueNone)    "Shift 4"
 
+buf.Unshift 80
+bufferIs buf [|80|] "back to 1 element"
+buf.PushMany [85;90]
 bufferIs buf [|80;85;90|] "3 elements"
 Test.is (buf.Pop())   (ValueSome 90) "pop on 3 elements"
 Test.is (buf.Shift()) (ValueSome 80) "shift on 2 elements"
@@ -69,5 +84,40 @@ Test.is (copy.FoldBack (fun x xs -> x :: xs) []) [115;110;105;130;135] "foldBack
 Test.is [for i= -3 to 3 do buf.[i]] [115;110;105;125;120;115;110] "indexer"
 Test.is (buf.Fold  (fun state x   -> x :: state) []) [105;110;115;120;125] "Fold"
 Test.is (buf.Foldi (fun state x i -> (i,x) :: state) []) [(4,105);(3,110);(2,115);(1,120);(0,125)] "Foldi"
+
+buf.[0]  <- 200
+bufferIs buf [|200;120;115;110;105|] "Item Setter 1"
+
+buf.[-1] <- 300
+bufferIs buf [|200;120;115;110;300|] "Item Setter 2"
+buf.[-3] <- 400
+bufferIs buf [|200;120;400;110;300|] "Item Setter 3"
+buf.[6]  <- 500
+bufferIs buf [|200;500;400;110;300|] "Item Setter 4"
+buf.[-7] <- 600
+bufferIs buf [|200;500;400;600;300|] "Item Setter 5"
+
+buf.Set 0 700
+bufferIs buf [|700;500;400;600;300|] "Set"
+Test.is (buf.Get -1) 300 "Get"
+
+buf.Shift()
+buf.Shift()
+
+bufferIs buf [|400;600;300|] "3 Element Buffer"
+Test.is (buf.[0])  400 "NFB Get 1"
+Test.is (buf.[2])  300 "NFB Get 2"
+Test.is (buf.[3])  400 "NFB Get 3"
+Test.is (buf.[-1]) 300 "NFB Get 4"
+Test.is (buf.[-3]) 400 "NFB Get 5"
+Test.is (buf.[-4]) 300 "NFB Get 6"
+Test.is (buf.[-7]) 300 "NFB Get 7"
+
+buf.[0] <- 1
+bufferIs buf [|1;600;300|] "NFB Set 1"
+buf.[1] <- 2
+bufferIs buf [|1;2;300|]   "NFB Set 2"
+buf.[2] <- 3
+bufferIs buf [|1;2;3|]     "NFB Set 3"
 
 Test.doneTesting ()

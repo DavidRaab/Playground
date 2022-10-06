@@ -40,7 +40,7 @@ type RingBuffer<'a>(capacity) =
             let indexToAdd = if start = 0 then maxIdx else start - 1
             buffer.[indexToAdd] <- x
 
-            if start = stop then
+            if start = stop && count > 0 then
                 start <- indexToAdd
                 stop  <- indexToAdd
             else
@@ -53,7 +53,7 @@ type RingBuffer<'a>(capacity) =
         | 0 -> ValueNone
         | _ ->
             if start = maxIdx then
-                let current = ValueSome buffer.[0]
+                let current = ValueSome buffer.[maxIdx]
                 buffer.[maxIdx] <- Unchecked.defaultof<_>
                 start           <- 0
                 count           <- count - 1
@@ -74,13 +74,26 @@ type RingBuffer<'a>(capacity) =
             this.Unshift x
 
     member this.Get idx =
-        if idx < 0 then
-            buffer.[(start + buffer.Length + (idx % buffer.Length)) % buffer.Length]
-        else
-            buffer.[(start + idx) % buffer.Length]
+        let idx =
+            if idx < 0 then
+                let idx = ((abs idx) - 1) % count
+                count - (idx + 1)
+            else
+                idx
+        buffer.[(start + (idx % count)) % buffer.Length ]
 
-    member this.Item idx =
-        this.Get idx
+    member this.Set idx x =
+        let idx =
+            if idx < 0 then
+                let idx = ((abs idx) - 1) % count
+                count - (idx + 1)
+            else
+                idx
+        buffer.[(start + (idx % count)) % buffer.Length] <- x
+
+    member this.Item
+        with get idx   = this.Get idx
+        and  set idx x = this.Set idx x
 
     member this.Foldi f (state:'State) =
         let rec loop state countSoFar idx =
@@ -154,13 +167,16 @@ type RingBuffer<'a>(capacity) =
 
     member this.ToArray () =
         let array = Array.zeroCreate count
-        if count > 0 && start < stop then
+        if count = 0 then
+            array
+        elif start < stop then
             Array.blit buffer start array 0 count
+            array
         else
             let countToStop = buffer.Length - start
             Array.blit buffer start array 0            countToStop
             Array.blit buffer 0     array countToStop (count - countToStop)
-        array
+            array
 
     override _.ToString () =
         sprintf "RingBuffer(Start=%d;Stop=%d;Count=%d;%A)" start stop count buffer
