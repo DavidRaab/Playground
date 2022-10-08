@@ -141,6 +141,13 @@ Test.throws (fun () ->
     ()
 ) "Capacity zero not allowed"
 
+try
+    let empty = RingBuffer<int>(0)
+    Test.fail "Doesn't throw exception"
+with
+| :? System.ArgumentException -> Test.pass "Throws ArgumentException"
+| _                           -> Test.fail "Throws other exception"
+
 
 let three = RingBuffer(3, [1..10])
 three |> checkBuffer [|8;9;10|] 3 "CWL1"

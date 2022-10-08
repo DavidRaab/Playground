@@ -4,6 +4,9 @@ module Test =
     let plan num =
         printfn "1..%d" num
 
+    let doneTesting () =
+        plan testsSoFar
+
     let ok bool name =
         testsSoFar <- testsSoFar + 1
         if bool then printfn "ok %d - %s"     testsSoFar name
@@ -31,5 +34,10 @@ module Test =
         then printfn "ok %d - %s" testsSoFar name
         else printfn "not ok %d - %s" testsSoFar name
 
-    let doneTesting () =
-        plan testsSoFar
+    let pass name =
+        testsSoFar <- testsSoFar + 1
+        printfn "ok %d - %s" testsSoFar name
+
+    let fail name =
+        testsSoFar <- testsSoFar + 1
+        printfn "not ok %d - %s" testsSoFar name
