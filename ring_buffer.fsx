@@ -143,10 +143,10 @@ Test.throws (fun () ->
 
 try
     let empty = RingBuffer<int>(0)
-    Test.fail "Doesn't throw exception"
+    Test.fail "Throws ArgumentException"
 with
 | :? System.ArgumentException -> Test.pass "Throws ArgumentException"
-| _                           -> Test.fail "Throws other exception"
+| _                           -> Test.fail "Throws ArgumentException"
 
 
 let three = RingBuffer(3, [1..10])
