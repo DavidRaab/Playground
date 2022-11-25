@@ -29,3 +29,9 @@ run
 ```
 ./_build/default/_test.exe
 ```
+
+# Compiling & Running with Dune
+
+```
+dune exec ./test.exe
+```
