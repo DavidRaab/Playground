@@ -1,0 +1,12 @@
+## Compiling
+
+ocamlc -o test.byte test.ml
+
+## Running
+
+./test.byte
+
+-OR-
+
+ocamlrun test.byte
+
