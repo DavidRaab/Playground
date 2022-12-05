@@ -297,7 +297,7 @@ Here is another example. Do you know the Ierator Pattern? It is often defined as
         A next();
     }
 
-This seems not obious first, but you could implement it as:
+This seems not obvious first, but you could implement it as:
 
     unit -> option<'a>
 
