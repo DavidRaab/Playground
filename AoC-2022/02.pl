@@ -63,7 +63,7 @@ my @data = map {
     m/\A ([ABC]) \s+ ([XYZ]) \Z/xms && [ $input_mapping->{$1}, $input_mapping->{$2} ]
 } <DATA>;
 
-# Caluclate the points
+# Calculate the points
 my $plan_points = 0;
 for my $plan ( @data ) {
     my ( $other, $me ) = @$plan;
