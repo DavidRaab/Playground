@@ -17,14 +17,17 @@ use Data::Printer;
 my $rock     = "ROCK";
 my $paper    = "PAPER";
 my $scissors = "SCISSORS";
+my $win      = "WIN";
+my $draw     = "DRAW";
+my $lose     = "LOSE";
 
 my $input_mapping = {
     A => $rock,
     B => $paper,
     C => $scissors,
-    X => $rock,
-    Y => $paper,
-    Z => $scissors,
+    X => $lose,
+    Y => $draw,
+    Z => $win,
 };
 
 my $tool_points = {
@@ -33,11 +36,29 @@ my $tool_points = {
     $scissors => 3
 };
 
+my $choose = {
+    $rock => {
+        $win  => $paper,
+        $draw => $rock,
+        $lose => $scissors,
+    },
+    $paper => {
+        $win  => $scissors,
+        $draw => $paper,
+        $lose => $rock,
+    },
+    $scissors => {
+        $win  => $rock,
+        $draw => $scissors,
+        $lose => $paper,
+    },
+};
+
 my $winning_points = {
     $rock => {
-        $rock     => 3, # DRAW
-        $paper    => 6, # WIN
-        $scissors => 0, # LOSS
+        $rock     => 3,
+        $paper    => 6,
+        $scissors => 0,
     },
     $paper => {
         $rock     => 0,
@@ -51,13 +72,6 @@ my $winning_points = {
     },
 };
 
-# First i parse the input to a data-structure like this
-# [
-#   ["ROCK",     "PAPER"],
-#   ["PAPER",    "ROCK"],
-#   ["SCISSORS", "SCISSORS"],
-# ]
-
 # Build Data-Structure
 my @data = map {
     m/\A ([ABC]) \s+ ([XYZ]) \Z/xms && [ $input_mapping->{$1}, $input_mapping->{$2} ]
@@ -66,9 +80,15 @@ my @data = map {
 # Calculate the points
 my $plan_points = 0;
 for my $plan ( @data ) {
-    my ( $other, $me ) = @$plan;
-    $plan_points += $tool_points->{$me} + $winning_points->{$other}{$me};
+    my ( $other, $target ) = @$plan;
+    my $tool = $choose->{$other}{$target};
+    $plan_points += $tool_points->{$tool} + $winning_points->{$other}{$tool};
 }
 
 # Print result
 printf "Total Points: %d\n", $plan_points;
+
+__DATA__
+A Y
+B X
+C Z
