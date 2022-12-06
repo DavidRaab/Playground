@@ -5,12 +5,13 @@ use feature 'signatures';
 no warnings 'experimental::signatures';
 use open ':std', ':encoding(UTF-8)';
 use Data::Printer;
-use List::Util qw(sum0);
+use List::Util qw(sum0 pairs);
 
+# Run with: ./01.pl 01.input
 # https://adventofcode.com/2022/day/1
 
-# Read whole content as a single string
-my $content = join "", <DATA>;
+# Read whole file as a single string
+my $content = join "", <>;
 
 # Regex to parse content block-wise
 my $block = qr/
@@ -47,6 +48,19 @@ my ($elf, $calories) = max_by(\%elf, sub ($value) { sum0 @$value });
 printf "Elf %d has most calories with %d calories\n", $elf, $calories;
 
 
+# Part 2:
+# Turn elfs into a sorted array by sumed calories, descending
+my @elfs =
+    sort { $b->[1] <=> $a->[1]          }
+    map  { [$_->[0], sum0 $_->[1]->@* ] }
+        pairs %elf;
+
+# Sum calories of first three elfs
+my $sum_first_three = sum0(map { $_->[1] } @elfs[0..2]);
+printf "Sum First Three: %d\n", $sum_first_three;
+
+
+
 # A generic hash utilty function that returns the key/value of the
 # highest value. value is calculated by the function $f.
 # numeric ">" is used for determining highest value.
@@ -61,19 +75,3 @@ sub max_by ($hash, $f) {
     }
     return ($max_key, $max_value);
 }
-
-__DATA__
-1000
-2000
-3000
-
-4000
-
-5000
-6000
-
-7000
-8000
-9000
-
-10000
