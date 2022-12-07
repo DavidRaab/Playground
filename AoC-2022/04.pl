@@ -5,20 +5,25 @@ use feature 'signatures';
 no warnings 'experimental::signatures';
 use open ':std', ':encoding(UTF-8)';
 use Data::Printer;
+use List::MoreUtils qw(duplicates);
 
 # https://adventofcode.com/2022/day/4
 
-while ( my $line = <DATA> ) {
+my $contains = 0;
+my $overlaps = 0;
+while ( my $line = <> ) {
     if ( $line =~ m/\A (\d+) - (\d+) , (\d+) - (\d+) \Z/x ) {
-        chomp $line;
-        if ( $1 >= $3 && $2 <= $4 ) {
-            printf "First is contained in Second: %s\n", $line;
+        if ( $1 >= $3 && $2 <= $4 or $3 >= $1 && $4 <= $2 ) {
+            $contains++;
         }
-        if ( $3 >= $1 && $4 <= $2 ) {
-            printf "Second is contained in First: %s\n", $line;
+        if ( duplicates ((int $1)..(int $2), (int $3)..(int $4)) ) {
+            $overlaps++;
         }
     }
 }
+
+printf "Contained: %d\n", $contains;
+printf "Overlaps:  %d\n", $overlaps;
 
 __DATA__
 2-4,6-8
