@@ -23,7 +23,7 @@ while ( $content =~ m/(\$ [^\$]+)/gxms ) {
 
 # p @commands;
 
-# State current working dir and fs
+# State: current working dir and fs to be build
 my $cwd = path("/");
 my $fs  = {};
 
@@ -58,12 +58,11 @@ for my $command ( @commands ) {
     }
 }
 
+# Part 1 - add size of all folders smaller equal 100_000
+
 # p $fs;
-my $out = {};
-dir_sizes(path("/"), $fs, $out);
-
+my $out = dir_sizes($fs);
 # p $out;
-
 my $summed_size = 0;
 for my $key ( keys %$out ) {
     my $value = $out->{$key};
@@ -71,14 +70,12 @@ for my $key ( keys %$out ) {
         $summed_size += $value;
     }
 }
-
 printf "Summed Size: %d\n", $summed_size;
 
-# Part 2
-my $free = 70_000_000 - $out->{"/"};
-printf "Free: %d\n", $free;
+
+# Part 2 - find smallest folder to delete
+my $free   = 70_000_000 - $out->{"/"};
 my $needed = 30_000_000 - $free;
-printf "Needed: %d\n", $needed;
 
 my @pick;
 while (my ($key, $value) = each %$out ) {
@@ -87,19 +84,22 @@ while (my ($key, $value) = each %$out ) {
     }
 }
 
-my $smallest = reduce {
-    $a->[1] < $b->[1] ? $a : $b
-} @pick;
-
+my $smallest = reduce { $a->[1] < $b->[1] ? $a : $b } @pick;
 printf "Smallest to delete: %s Size: %d\n", $smallest->[0], $smallest->[1];
 
 # Creates a flattened hash with (Path => Size)
-sub dir_sizes ($cwd, $fs, $state) {
+sub dir_sizes ($fs) {
+    my $out = {};
+    dir_sizes_intern(path("/"), $out, $fs);
+    return $out;
+}
+
+sub dir_sizes_intern ($cwd, $state, $fs) {
     my $size = 0;
     for my $key ( keys %$fs ) {
         my $value = $fs->{$key};
         if ( ref $value eq 'HASH' ) {
-            $size += dir_sizes($cwd->child($key), $value, $state);
+            $size += dir_sizes_intern($cwd->child($key), $state, $value);
         }
         else {
             $size += $value;
