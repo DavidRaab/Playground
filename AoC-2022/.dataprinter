@@ -1,0 +1,2 @@
+hash_separator = " => "
+quote_keys     = 1
