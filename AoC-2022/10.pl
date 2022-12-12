@@ -87,12 +87,8 @@ while ( pnext($processor) ) {
     }
 
     # Draw Pixel
-    if ( any { $pixel == $_ } $reg-1, $reg, $reg+1 ) {
-        print "#";
-    }
-    else {
-        print ".";
-    }
+    my $char = (any { $pixel == $_ } $reg-1, $reg, $reg+1) ? "#" : ".";
+    print $char;
 
     if ( ++$pixel == 40 ) {
         print "\n";
