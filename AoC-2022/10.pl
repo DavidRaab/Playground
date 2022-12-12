@@ -13,6 +13,7 @@ my $processor = {
     queue    => [],
 };
 
+
 # Adds a command to the queue, but does a transformation on it
 sub add_command ($cmd, @args) {
     if ( $cmd eq 'noop' ) {
@@ -31,21 +32,27 @@ sub add_command ($cmd, @args) {
     return;
 }
 
+# Just funny object-orientet prototype like crap
+sub add_method($obj, $name, $f) {
+    $obj->{$name} = sub { return $f->($obj) };
+}
+
+# Add next as a function on the hash. Much like Prototype stuff
 # Advance the processor for ony cycle
-sub pnext ($processor) {
+add_method($processor, next => sub ($self) {
     COMMAND:
     # Do nothing if queue is empty
-    return if $processor->{queue}->@* == 0;
+    return if $self->{queue}->@* == 0;
 
     # otherwise read command
-    my $command      = shift $processor->{queue}->@*;
+    my $command      = shift $self->{queue}->@*;
     my ($cmd, @args) = @$command;
 
     if ( $cmd eq 'noop' ) {
-        $processor->{cycle}++;
+        $self->{cycle}++;
     }
     elsif ( $cmd eq 'add' ) {
-        $processor->{register} = $processor->{register} + $args[0];
+        $self->{register} = $self->{register} + $args[0];
         goto COMMAND;
     }
     else {
@@ -53,7 +60,7 @@ sub pnext ($processor) {
     }
 
     return 1;
-}
+});
 
 # parse the input and fill processor queue
 while ( my $line = <> ) {
@@ -77,7 +84,7 @@ sub show ($processor) {
 # run the processor
 my $sum   = 0;
 my $pixel = 0;
-while ( pnext($processor) ) {
+while ( $processor->{next}() ) {
     my ($cycle, $reg) = ($processor->{cycle}, $processor->{register});
 
     # Calculate the sum
