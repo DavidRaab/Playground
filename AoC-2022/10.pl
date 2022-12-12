@@ -75,11 +75,28 @@ sub show ($processor) {
 }
 
 # run the processor
-my $sum = 0;
+my $sum   = 0;
+my $pixel = 0;
 while ( pnext($processor) ) {
-    if ( any { $processor->{cycle} eq $_ } 20, 60, 100, 140, 180, 220 ) {
-        show $processor;
-        $sum += $processor->{cycle} * $processor->{register};
+    my ($cycle, $reg) = ($processor->{cycle}, $processor->{register});
+
+    # Calculate the sum
+    if ( any { $cycle eq $_ } 20, 60, 100, 140, 180, 220 ) {
+        # show $processor;
+        $sum += $cycle * $reg;
+    }
+
+    # Draw Pixel
+    if ( any { $pixel == $_ } $reg-1, $reg, $reg+1 ) {
+        print "#";
+    }
+    else {
+        print ".";
+    }
+
+    if ( ++$pixel == 40 ) {
+        print "\n";
+        $pixel = 0;
     }
 }
 
