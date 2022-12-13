@@ -78,14 +78,14 @@ while ( my $line = <> ) {
 # p $processor;
 
 sub show ($processor) {
-    printf "Cycle: %d Register: %d\n", $processor->{cycle}, $processor->{register};
+    printf "Cycle: %d Register: %d\n", $processor->@{qw/cycle register/};
 }
 
 # run the processor
 my $sum   = 0;
 my $pixel = 0;
 while ( $processor->{next}() ) {
-    my ($cycle, $reg) = ($processor->{cycle}, $processor->{register});
+    my ($cycle, $reg) = $processor->@{qw/cycle register/};
 
     # Calculate the sum
     if ( any { $cycle eq $_ } 20, 60, 100, 140, 180, 220 ) {
