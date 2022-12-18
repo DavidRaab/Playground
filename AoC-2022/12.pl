@@ -21,7 +21,7 @@ my $stop = $map->reduce([-1,-1], sub ($acc, $val, $x, $y) {
 });
 
 printf "Start: %s\n", np($start);
-printf "Stop:  %s\n", np($stop);
+printf "Stop:  %s\n\n", np($stop);
 
 # mapping from chars to num
 my @chars   = ('a' .. 'z', 'S', 'E');
@@ -39,16 +39,34 @@ my $field = dijkstra($input, $start);
 my $path  = path($field, $stop);
 
 # show Path visually
-my $show = Array2D->init($input->width, $input->height, sub { "." });
-for my $pos ( @$path ) {
-    $show->set($pos, $map->get($pos));
-}
-say $show->show(sub ($pos, $value) {
-    $value;
-});
+show_path($map, $path);
 
 # Print length
-printf "Path Length: %d\n", (scalar @$path - 1);
+printf "Path Length: %d\n\n", (scalar @$path - 1);
+
+# Part 2
+my $shortest_field = $field;
+my $shortest_path  = $path;
+{
+    for my $y ( 0 .. $input->height-1 ) {
+        for my $x ( 0 .. $input->width-1 ) {
+            if ( $input->get_xy($x,$y) == 1 ) {
+                my $field = dijkstra($input, Pos->new($x,$y));
+                my $path  = path($field, $stop);
+
+                if ( defined $path && @$path < @$shortest_path ) {
+                    $shortest_field = $field;
+                    $shortest_path  = $path;
+                }
+            }
+        }
+    }
+}
+
+print "Shortest\n\n";
+show_path($map, $shortest_path);
+printf "Shortest Length: %d\n", (scalar @$shortest_path - 1);
+
 
 # Computes the Dijkstra map
 sub dijkstra($input, $start) {
@@ -61,7 +79,6 @@ sub dijkstra($input, $start) {
     # Compute Dijkstra Map
     my @queue = ($start);
     while ( my $pos = shift @queue ) {
-        my ($x, $y) = $pos->xy;
         my $current = $input->get($pos);
 
         for my $next ( $pos->top, $pos->right, $pos->bottom, $pos->left ) {
@@ -89,9 +106,21 @@ sub path($dij, $target) {
     NODE:
     push @path, $node;
     $node = $dij->get($node);
-    goto NODE if not $node->equal($stop);
+    goto NOPATH if $node == -1;
+    goto NODE   if not $node->equal($stop);
 
     return wantarray ? @path : \@path;
+
+    NOPATH:
+    return;
+}
+
+sub show_path($input, $path) {
+    my $show = Array2D->init($input->width, $input->height, sub { "." });
+    for my $pos ( @$path ) {
+        $show->set($pos, $input->get($pos));
+    }
+    say $show->show(sub ($pos, $value) { $value });
 }
 
 package Pos;
