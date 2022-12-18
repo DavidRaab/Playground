@@ -41,7 +41,7 @@ my $path  = path($field, $stop);
 # show Path visually
 my $show = Array2D->init($input->width, $input->height, sub { "." });
 for my $pos ( @$path ) {
-    $show->set($pos, 'x');
+    $show->set($pos, $map->get($pos));
 }
 say $show->show(sub ($pos, $value) {
     $value;
