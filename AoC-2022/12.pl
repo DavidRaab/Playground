@@ -125,7 +125,11 @@ no warnings 'experimental::signatures';
 use List::Util qw(max);
 
 sub from_aoa($class, $aoa) {
-    return bless($aoa, $class);
+    return bless({
+        data   => $aoa,
+        width  => max(map { scalar @$_ } @$aoa),
+        height => scalar @$aoa,
+    }, $class);
 }
 
 sub init ($class, $width, $height, $f) {
@@ -137,11 +141,16 @@ sub init ($class, $width, $height, $f) {
         }
         push @arr, \@row;
     }
-    return bless(\@arr, $class);
+
+    return bless({
+        data   => \@arr,
+        width  => $width,
+        height => $height,
+    }, $class);
 }
 
-sub height ($self) { return scalar @$self }
-sub width  ($self) { return max map { scalar @$_ } @$self }
+sub height ($self) { return $self->{height} }
+sub width  ($self) { return $self->{width}  }
 
 sub is_inside ($self, $pos) {
     my ($w, $h) = ($self->width, $self->height);
@@ -155,19 +164,19 @@ sub is_inside ($self, $pos) {
 
 sub get($self, $pos) {
     if ( $self->is_inside($pos) ) {
-        return $self->[$pos->y][$pos->x];
+        return $self->{data}[$pos->y][$pos->x];
     }
     return;
 }
 
 sub set($self, $pos, $value) {
-    $self->[$pos->y][$pos->x] = $value;
+    $self->{data}[$pos->y][$pos->x] = $value;
 }
 
 sub reduce ($self, $init, $f) {
     for my $y ( 0 .. $self->height - 1 ) {
         for my $x ( 0 .. $self->width - 1 ) {
-            $init = $f->($init, $self->[$y][$x], $x, $y);
+            $init = $f->($init, $self->get(Pos->new($x,$y)), $x, $y);
         }
     }
     return $init;
@@ -176,7 +185,7 @@ sub reduce ($self, $init, $f) {
 sub iter ($self, $f) {
     for my $y ( 0 .. $self->height - 1 ) {
         for my $x ( 0 .. $self->width - 1 ) {
-            $f->(Pos->new($x,$y), $self->[$y][$x]);
+            $f->(Pos->new($x,$y), $self->get(Pos->new($x,$y)));
         }
     }
 }
@@ -186,7 +195,11 @@ sub map ($self, $f) {
     $self->iter(sub($pos, $val) {
         $new[$pos->y][$pos->x] = $f->($val);
     });
-    return bless(\@new, ref $self);
+    return bless({
+        data   => \@new,
+        width  => $self->width,
+        height => $self->height,
+    }, ref $self);
 }
 
 sub show($self, $fmt) {
