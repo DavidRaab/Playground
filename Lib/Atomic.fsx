@@ -16,14 +16,14 @@ module Atomic =
         v.Value <- x
 
     let map f a =
+        let r = run a
         Atomic(fun () ->
-            let v = run a
-            ref (f v.Value)
+            ref (f r.Value)
         )
 
     let map2 f a b =
+        let a = run a
+        let b = run b
         Atomic(fun () ->
-            let a = run a
-            let b = run b
             ref (f a.Value b.Value)
         )
