@@ -46,13 +46,9 @@ sub compare ($left, $right) {
     my $l = head $left;
     my $r = head $right;
 
-    # printf "L: %s\nR: %s\n", np($l), np($r);
-
     return  0 if !defined $l && !defined $r;
     return -1 if !defined $l &&  defined $r;
     return  1 if  defined $l && !defined $r;
-
-    # say "BOTH DEFINED";
 
     # if both arrays
     if ( ref $l  &&  ref $r ) {
@@ -60,17 +56,12 @@ sub compare ($left, $right) {
         return $res if $res;
     }
 
-    # say "NOT ARRAYS";
-
     # if both numbers
     if ( !ref $l  &&  !ref $r ) {
-        # printf "compare %d %d\n", $l, $r;
         return -1 if $l < $r;
         return  1 if $l > $r;
         goto NEXT;
     }
-
-    # say "NOT NUMBERS";
 
     # number; array
     if ( !ref $l  &&  ref $r ) {
@@ -78,15 +69,11 @@ sub compare ($left, $right) {
         return $res if $res;
     }
 
-    # say "NOT NA";
-
     # array; number
     if ( ref $l  &&  !ref $r ) {
         my $res = compare($l, [$r]);
         return $res if $res;
     }
-
-    # say "NOT AN";
 
     NEXT:
     @_ = (tail($left), tail($right));
