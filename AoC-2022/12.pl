@@ -106,13 +106,10 @@ sub path($dij, $target) {
     NODE:
     push @path, $node;
     $node = $dij->get($node);
-    goto NOPATH if $node == -1;
+    return if $node == -1;
     goto NODE   if not $node->equal($stop);
 
     return wantarray ? @path : \@path;
-
-    NOPATH:
-    return;
 }
 
 sub show_path($input, $path) {
