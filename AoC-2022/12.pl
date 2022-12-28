@@ -7,6 +7,8 @@ use open ':std', ':encoding(UTF-8)';
 use Data::Printer;
 use Scalar::Util qw(blessed);
 use List::MoreUtils qw(zip);
+use lib ".";
+use Array2D;
 
 # read input as Array2D
 my $map = Array2D->from_aoa([ map {chomp; [split //]} <> ]);
@@ -50,7 +52,7 @@ my $shortest_path  = $path;
 {
     for my $y ( 0 .. $input->height-1 ) {
         for my $x ( 0 .. $input->width-1 ) {
-            if ( $input->get_xy($x,$y) == 1 ) {
+            if ( $input->get($x,$y) == 1 ) {
                 my $field = dijkstra($input, Pos->new($x,$y));
                 my $path  = path($field, $stop);
 
@@ -74,20 +76,20 @@ sub dijkstra($input, $start) {
     my $field = Array2D->init($map->width, $map->height, sub { -1 } );
 
     # Consider Pos(-1,-1) as target
-    $field->set($start, Pos->new(-1,-1));
+    $field->set($start->xy, Pos->new(-1,-1));
 
     # Compute Dijkstra Map
     my @queue = ($start);
     while ( my $pos = shift @queue ) {
-        my $current = $input->get($pos);
+        my $current = $input->get($pos->xy);
 
         for my $next ( $pos->top, $pos->right, $pos->bottom, $pos->left ) {
-            my $next_value = $input->get($next);
+            my $next_value = $input->get($next->xy);
             next if not defined $next_value;
 
             if ( $next_value <= $current + 1 ) {
-                if ( not ref $field->get($next) ) {
-                    $field->set($next, $pos);
+                if ( not ref $field->get($next->xy) ) {
+                    $field->set($next->xy, $pos);
                     push @queue, $next;
                 }
             }
@@ -105,7 +107,7 @@ sub path($dij, $target) {
     my $node = $target;
     NODE:
     push @path, $node;
-    $node = $dij->get($node);
+    $node = $dij->get($node->xy);
     return if $node == -1;
     goto NODE   if not $node->equal($stop);
 
@@ -115,9 +117,9 @@ sub path($dij, $target) {
 sub show_path($input, $path) {
     my $show = Array2D->init($input->width, $input->height, sub { "." });
     for my $pos ( @$path ) {
-        $show->set($pos, $input->get($pos));
+        $show->set($pos->xy, $input->get($pos->xy));
     }
-    say $show->show(sub ($pos, $value) { $value });
+    say $show->show(sub ($x, $y, $value) { $value });
 }
 
 package Pos;
@@ -142,113 +144,4 @@ sub equal ($self,$pos) {
 
 sub _data_printer ($self,$ddp) {
     return sprintf("Pos(%d,%d)", $self->x, $self->y);
-}
-
-# Array2D Helper
-package Array2D;
-use v5.32;
-use warnings;
-use feature 'signatures';
-no warnings 'experimental::signatures';
-use List::Util qw(max);
-
-sub from_aoa($class, $aoa) {
-    return bless({
-        data   => $aoa,
-        width  => max(map { scalar @$_ } @$aoa),
-        height => scalar @$aoa,
-    }, $class);
-}
-
-sub init ($class, $width, $height, $f) {
-    my @arr;
-    for my $y ( 0 .. $height-1 ) {
-        my @row;
-        for my $x ( 0 .. $width-1 ) {
-            push @row, $f->($x,$y);
-        }
-        push @arr, \@row;
-    }
-
-    return bless({
-        data   => \@arr,
-        width  => $width,
-        height => $height,
-    }, $class);
-}
-
-sub height ($self) { return $self->{height} }
-sub width  ($self) { return $self->{width}  }
-
-sub is_inside ($self, $pos) {
-    my ($x, $y) = $pos->xy;
-    if ( $x >= 0 && $y >= 0 && $x < $self->{width} && $y < $self->{height} ) {
-        return 1;
-    }
-    return;
-}
-
-sub get($self, $pos) {
-    my ($x, $y) = $pos->xy;
-    if ( $x >= 0 && $y >= 0 && $x < $self->{width} && $y < $self->{height} ) {
-        return $self->{data}[$y][$x];
-    }
-    return;
-}
-
-sub get_xy($self, $x, $y) {
-    if ( $x >= 0 && $y >= 0 && $x < $self->{width} && $y < $self->{height} ) {
-        return $self->{data}[$y][$x];
-    }
-    return;
-}
-
-sub set($self, $pos, $value) {
-    $self->{data}[$pos->y][$pos->x] = $value;
-}
-
-sub set_xy($self, $x, $y, $value) {
-    $self->{data}[$y][$x] = $value;
-}
-
-sub reduce ($self, $init, $f) {
-    for my $y ( 0 .. $self->height - 1 ) {
-        for my $x ( 0 .. $self->width - 1 ) {
-            $init = $f->($init, $self->get_xy($x,$y), $x, $y);
-        }
-    }
-    return $init;
-}
-
-sub iter ($self, $f) {
-    for my $y ( 0 .. $self->height - 1 ) {
-        for my $x ( 0 .. $self->width - 1 ) {
-            $f->(Pos->new($x,$y), $self->get_xy($x,$y));
-        }
-    }
-}
-
-sub map ($self, $f) {
-    my @new;
-    $self->iter(sub($pos, $val) {
-        $new[$pos->y][$pos->x] = $f->($val);
-    });
-    return bless({
-        data   => \@new,
-        width  => $self->width,
-        height => $self->height,
-    }, ref $self);
-}
-
-sub show($self, $fmt) {
-    my $str = "";
-    for my $y ( 0 .. $self->height - 1 ) {
-        my @row;
-        for my $x ( 0 .. $self->width - 1 ) {
-            my $pos = Pos->new($x,$y);
-            push @row, $fmt->($pos, $self->get($pos));
-        }
-        $str .= join("", @row) . "\n";
-    }
-    return $str;
 }
