@@ -250,6 +250,17 @@ sub filter($iter, $f) {
     }
 }
 
+sub ifilter($iter, $f) {
+    collect($iter, sub ($x) {
+        if ( $f->($x) ) {
+            wrap($x);
+        }
+        else {
+            wrap();
+        }
+    });
+}
+
 sub take($iter, $amount) {
     return sub {
         my $i     = $iter->();
