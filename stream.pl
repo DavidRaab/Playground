@@ -34,15 +34,15 @@ use Carp qw(croak);
 # say "";
 
 my $range         = upto(1, 1_000_000_000);
-my $squared       = imap2($range, sub ($x) { $x * $x });
-my $evenSquared   = ifilter($squared, sub ($x) { $x % 2 == 0 });
-my $evenSquared10 = take2($evenSquared, 10);
+my $squared       = imap($range, sub ($x) { $x * $x });
+my $evenSquared   = filter($squared, sub ($x) { $x % 2 == 0 });
+my $evenSquared10 = take($evenSquared, 10);
 
 iter($evenSquared10, sub ($x) { say $x });
 say "";
 iter($evenSquared10, sub ($x) { say $x });
 say "";
-iter(take2(fib(), 20), sub($x) { say $x });
+iter(take(fib(), 20), sub($x) { say $x });
 say "";
 
 
@@ -56,6 +56,21 @@ sub fib {
 
 
 # -- Iterator implemenation from here
+
+sub wrap(@vars) {
+    return sub {
+        my $length = @vars;
+        my $i      = 0;
+        return sub {
+            if ( $i < $length ) {
+                my $x = $vars[$i];
+                $i++;
+                return $x;
+            }
+            return;
+        }
+    }
+}
 
 sub range($start, $stop) {
     return sub {
@@ -71,9 +86,10 @@ sub range($start, $stop) {
     }
 }
 
+
 sub iter($iter, $f) {
     my $i = $iter->();
-    while ( my $x = $i->() ) {
+    while ( defined(my $x = $i->()) ) {
         $f->($x);
     }
     return;
@@ -96,53 +112,7 @@ sub unfold($state, $f) {
 sub upto($start, $stop) {
     return unfold($start, sub($state) {
         return ++$state <= $stop ? ($state,$state) : undef;
-        # if ( ++$state <= $stop ) {
-        #     return $state, $state;
-        # }
-        # else {
-        #     return;
-        # }
     });
-}
-
-sub yield($value,$state=undef) { return ([YIELD => $value], $state) }
-sub skip()                     { return [YIELD => undef]            }
-sub stop()                     { return undef                       }
-sub is_yield($value) {
-    ref $value eq 'ARRAY'
-    && @$value == 2
-    && $value->[0] eq 'YIELD'
-}
-
-# [YIELD, 10]    => Keep value 10
-# [YIELD, undef] => Skip Value
-# undef          => Abort iteration
-sub ifor($iter, $state, $f) {
-    return sub {
-        my $i       = $iter->();
-        my $running = 1;
-        my $state   = $state;
-        my $new;
-        return sub {
-            while ( $running && defined(my $x = $i->()) ) {
-                ($new, $state) = $f->($x, $state);
-                if ( defined($new) ) {
-                    if ( is_yield $new ) {
-                        return $new->[1] if defined $new->[1];
-                        next;
-                    }
-                    else {
-                        croak "lambda function in ifor must return yield or undef";
-                    }
-                }
-                else {
-                    $running = 0;
-                    return;
-                }
-            }
-            return;
-        }
-    }
 }
 
 sub imap($iter, $f) {
@@ -157,39 +127,25 @@ sub imap($iter, $f) {
     }
 }
 
-sub imap2($iter, $f) {
-    return ifor($iter, undef, sub($x, $state) {
-        return yield $f->($x);
-    });
-}
-
 sub filter($iter, $f) {
     return sub {
         my $i = $iter->();
         return sub {
             while ( defined(my $x = $i->()) ) {
-                if ( $f->($x) ) {
-                    return $x;
-                }
+                return $x if $f->($x);
             }
             return;
         }
     }
 }
 
-sub ifilter($iter, $f) {
-    return ifor($iter, undef, sub($x, $state) {
-        return $f->($x) ? yield $x : skip;
-    });
-}
-
 sub take($iter, $amount) {
     return sub {
-        my $i             = $iter->();
-        my $returnedSoFar = 0;
+        my $i     = $iter->();
+        my $count = 0;
         return sub {
-            if ( $returnedSoFar < $amount ) {
-                $returnedSoFar++;
+            if ( $count < $amount ) {
+                $count++;
                 if ( defined(my $x = $i->()) ) {
                     return $x;
                 }
@@ -197,10 +153,4 @@ sub take($iter, $amount) {
             return;
         }
     }
-}
-
-sub take2($iter, $amount) {
-    return ifor($iter, 0, sub ($x, $state) {
-        return $state < $amount ? yield $x, $state+1 : stop;
-    });
 }
