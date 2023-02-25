@@ -51,7 +51,7 @@ module Test =
         testsSoFar <- testsSoFar + 1
         printfn "not ok %d - %s" testsSoFar name
 
-    /// Checks if two floats are the same with the given accuracy
+    /// Check if two floats are the same with the accuracy of `Test.Accuracy`
     let float got expected name =
         testsSoFar <- testsSoFar + 1
         if   abs (got - expected) < Accuracy
@@ -62,7 +62,7 @@ module Test =
             printfn "#          got: %f" got
             printfn "#     expected: %f" expected
 
-    /// Checks if two float lists are identical
+    /// Check if two float lists are identical with the accuracy of `Test.Acurracy`
     let floatList (got:list<float>) expected name =
         let fail name =
             testsSoFar <- testsSoFar + 1
