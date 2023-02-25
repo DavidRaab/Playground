@@ -30,6 +30,20 @@ module Animation =
     let wrap x =
         Animation(fun () -> Anim(fun deltaTime -> Finished(x,deltaTime)))
 
+    /// Repeats `x` for `duration` time
+    let duration duration x =
+        Animation(fun () ->
+            let mutable soFar = TimeSpan.Zero
+            Anim(fun dt ->
+                soFar <- soFar + dt
+                if soFar < duration then
+                    Running x
+                else
+                    let remaining = duration - soFar
+                    Finished (x,remaining)
+            )
+        )
+
     /// Runs an animation by returning Anim<'a>
     let run (Animation f) =
         f ()
@@ -77,8 +91,60 @@ module Animation =
             )
         )
 
+    /// Flattens an Animation of Animations into a single animation
+    let flatten anim =
+        Animation(fun () ->
+            let anim             = run anim
+            let mutable finished = false
+            let mutable current  = ValueNone
+            Anim(fun dt ->
+                match current with
+                | ValueNone ->
+                    match Anim.run dt anim with
+                    | Running a ->
+                        let a = run a
+                        current <- ValueSome a
+                        Anim.run dt a
+                    | Finished (a,_) ->
+                        let a = run a
+                        current  <- ValueSome a
+                        finished <- true
+                        Anim.run dt a
+                | ValueSome a ->
+                    match Anim.run dt a with
+                    | Running x      ->
+                        Running x
+                    | Finished (x,t) ->
+                        if finished then
+                            Finished (x,t)
+                        else
+                            current <- ValueNone
+                            Running x
+            )
+        )
+
+    /// Turns a list of animations into an animation
+    let ofList xs =
+        if List.isEmpty xs then failwith "list cannot be empty in List.ofList"
+        Animation(fun () ->
+            let mutable xs   = xs
+            let mutable last = Unchecked.defaultof<_>
+            Anim(fun dt ->
+                match xs with
+                | []         -> Finished (last, TimeSpan.Zero)
+                | head::[]   ->
+                    last <- head
+                    xs   <- []
+                    Finished (head, TimeSpan.Zero)
+                | head::tail ->
+                    last <- head
+                    xs   <- tail
+                    Running head
+            )
+        )
+
     /// Combine two animations by running the first then the second animation
-    let andThen anim1 anim2 =
+    let append anim1 anim2 =
         Animation(fun () ->
             let anim1 = run anim1
             let anim2 = run anim2
@@ -102,6 +168,19 @@ module Animation =
                         Anim.run dt anim2
             )
         )
+
+    // let flatten anims =
+    //     Animation(fun () ->
+    //         let anim = run anims
+    //         Anim(fun dt ->
+    //         )
+    //     )
+
+    let bind f anim =
+        flatten (map f anim)
+
+    // let append anim1 anim2 =
+    //     flatten (ofList [anim1; anim2])
 
 
 module Lerp =
