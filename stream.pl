@@ -28,7 +28,7 @@ say "";
 my $hash = { Foo => 1, Bar => 1 };
 iter(fromHash($hash), sub($tuple) {
     my ($key, $value) = @$tuple;
-    printf "Key: %s, Value: %s\n", $key, $value;
+    printf "%s => %s\n", $key, $value;
 });
 
 # cartesian product
@@ -40,6 +40,9 @@ my $product = cartesian($keys, $values);
 
 my $cartH = toHash($product);
 p $cartH;
+
+my $cartA = toArray($product);
+p $cartA;
 
 
 # creates the fibonacci sequence
@@ -86,15 +89,35 @@ sub fromHash($href) {
     return wrap(@data);
 }
 
-# turns an iterator of tuples (array with key,value) into a hash
-sub toHash($iter) {
-    my $href = {};
-    iter($iter, sub ($tuple) {
-        my ($key, $value) = @$tuple;
-        $href->{$key} = $value;
+sub fold($iter, $fstate, $f) {
+    my $state = $fstate->();
+    iter($iter, sub ($x) {
+        $f->($state, $x);
     });
-    return $href;
+    return $state;
 }
+
+sub toHash($iter) {
+    fold($iter, sub { {} }, sub($state, $x) {
+        $state->{$x->[0]} = $x->[1];
+    });
+}
+
+sub toArray($iter) {
+    fold($iter, sub { [] }, sub($state, $x) {
+        push @$state, $x;
+    });
+}
+
+# turns an iterator of tuples (array with key,value) into a hash
+# sub toHash($iter) {
+#     my $href = {};
+#     iter($iter, sub ($tuple) {
+#         my ($key, $value) = @$tuple;
+#         $href->{$key} = $value;
+#     });
+#     return $href;
+# }
 
 # Appends two iterators into a single iterator
 sub append($iterA, $iterB) {
