@@ -21,17 +21,17 @@ Test.is
 // Animation that runs from 1.0 to 10.0 ...
 let toTen = Animation.fromLerp (Lerp.float 1 10)
 
-Test.is
+Test.floatList
     (Animation.toList (ms 500) (toTen (sec 1)))
     [5.5; 10]
     "Lerp.float 1 10 in 1 seconds"
 
-Test.is
+Test.floatList
     (Animation.toList (ms 500) (toTen (sec 2)) )
     [3.25;  5.5;  7.75; 10.0]
     "Lerp.float 1 10 in 2 seconds"
 
-Test.is
+Test.floatList
     (Animation.toList (ms 500) (toTen (sec 10)))
     [1.45; 1.9; 2.35; 2.8; 3.25; 3.7; 4.15; 4.6; 5.05; 5.5; 5.95; 6.4; 6.85; 7.3; 7.75; 8.2; 8.65; 9.1; 9.55; 10.0]
     "Lerp.float 1 10 in 10 seconds"
@@ -42,10 +42,9 @@ Test.is
     [0;1;1;2;2;3;3;4;4;5]
     "Lerp.int 0 5 with 100ms"
 
-Test.is
+Test.floatList
     (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.fromLerp (Lerp.float 1 3) (sec 1))))
     [2.4; 2.8; 3.2; 3.6; 4.0; 4.4; 4.8; 5.2; 5.6; 6.0]
     "Animation.map"
-
 
 Test.doneTesting ()
