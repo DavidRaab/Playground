@@ -47,4 +47,14 @@ Test.floatList
     [2.4; 2.8; 3.2; 3.6; 4.0; 4.4; 4.8; 5.2; 5.6; 6.0]
     "Animation.map"
 
+// Animation from 1 to 3 downto 1
+Test.floatList
+    (Animation.toList
+        (ms 250)
+        (Animation.andThen
+            (Animation.fromLerp (Lerp.float 1 3) (sec 1))
+            (Animation.fromLerp (Lerp.float 3 1) (sec 1))))
+    [1.5; 2.0; 2.5; 3.0; 2.5; 2.0; 1.5; 1.0]
+    "Animation.andThen"
+
 Test.doneTesting ()

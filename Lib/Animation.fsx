@@ -77,6 +77,32 @@ module Animation =
             )
         )
 
+    /// Combine two animations by running the first then the second animation
+    let andThen anim1 anim2 =
+        Animation(fun () ->
+            let anim1 = run anim1
+            let anim2 = run anim2
+
+            let mutable first = true
+            let mutable left  = TimeSpan.Zero
+            Anim(fun dt ->
+                if first then
+                    match Anim.run dt anim1 with
+                    | Running x      -> Running x
+                    | Finished (x,t) ->
+                        left  <- t
+                        first <- false
+                        Running x
+                else
+                    if left = TimeSpan.Zero then
+                        Anim.run dt anim2
+                    else
+                        let dt = left + dt
+                        left <- TimeSpan.Zero
+                        Anim.run dt anim2
+            )
+        )
+
 
 module Lerp =
     let int (start:int) (stop:int) fraction =
