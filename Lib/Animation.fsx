@@ -53,7 +53,7 @@ module Animation =
         )
 
     /// Turns a whole animation into a list by simulating it with `stepTime`
-    let toList anim stepTime =
+    let toList stepTime anim =
         let anim = run anim
         [
             let mutable running = true
@@ -65,6 +65,17 @@ module Animation =
                     running <- false
                     yield x
         ]
+
+    /// returns a new animation whose values are applied to the given function.
+    let map f anim =
+        Animation(fun () ->
+            let anim = run anim
+            Anim(fun dt ->
+                match Anim.run dt anim with
+                | Running   x    -> Running  (f x)
+                | Finished (x,t) -> Finished (f x, t)
+            )
+        )
 
 
 module Lerp =
