@@ -41,11 +41,9 @@ module Animation =
             let mutable soFar = TimeSpan.Zero
             Anim(fun dt ->
                 soFar <- soFar + dt
-                if soFar < duration then
-                    Running x
-                else
-                    let remaining = duration - soFar
-                    Finished (x,remaining)
+                if   soFar < duration
+                then Running x
+                else Finished (x, soFar - duration)
             )
         )
 
@@ -67,7 +65,7 @@ module Animation =
                 soFar <- soFar + dt
                 if   soFar < duration
                 then Running  (f (soFar / duration))
-                else Finished (f 1.0, duration - soFar)
+                else Finished (f 1.0, soFar - duration)
             )
         )
 
@@ -103,9 +101,9 @@ module Animation =
             Anim(fun dt ->
                 match Anim.run dt fanim, Anim.run dt anim with
                 | Running   f,    Running   x    -> Running  (f x)
-                | Running   f,    Finished (x,t) -> Running  (f x)
-                | Finished (f,t), Running   x    -> Running  (f x)
-                | Finished (f,t), Finished (x,_) -> Finished (f x, t)
+                | Running   f,    Finished (x,_) -> Running  (f x)
+                | Finished (f,_), Running   x    -> Running  (f x)
+                | Finished (f,t), Finished (x,u) -> Finished (f x, min t u)
             )
         )
 
@@ -183,11 +181,15 @@ module Animation =
 
     /// zips two animations
     let zip anim1 anim2 =
-        map2 (fun x y -> (x,y)) anim1 anim2
+        map2 (fun x y -> x,y) anim1 anim2
 
     /// zips three animations
     let zip3 anim1 anim2 anim3 =
-        map3 (fun x y z -> (x,y,z)) anim1 anim2 anim3
+        map3 (fun x y z -> x,y,z) anim1 anim2 anim3
+
+    /// zips three animations
+    let zip4 anim1 anim2 anim3 anim4 =
+        map4 (fun x y z w -> x,y,z,w) anim1 anim2 anim3 anim4
 
 
 module Lerp =

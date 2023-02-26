@@ -136,17 +136,44 @@ Test.is
     [1;1;2;2;3;3]
     "Animation.ofSeqDuration"
 
-Test.is
-    (Animation.toList
-        (ms 100)
-        (Animation.zip
-            (Animation.fromLerp (ms  500) (Lerp.float 0 10))
-            (Animation.fromLerp (ms 1000) (Lerp.float 50 100))))
-    [
-        ( 2, 55); ( 4, 60); ( 6, 65); ( 8, 70); (10, 75)
-        (10, 80); (10, 85); (10, 90); (10, 95); (10, 100)
-    ]
-    "Check if longest animation is used"
+let test_longest =
+    Test.is
+        (Animation.toList
+            (ms 100)
+            (Animation.zip
+                (Animation.fromLerp (ms  500) (Lerp.float 0 10))
+                (Animation.fromLerp (ms 1000) (Lerp.float 50 100))))
+        [
+            ( 2, 55); ( 4, 60); ( 6, 65); ( 8, 70); (10, 75)
+            (10, 80); (10, 85); (10, 90); (10, 95); (10, 100)
+        ]
+        "1. longest running animation is used"
+
+    Test.is
+        (Anim.run (ms 1000)
+            (Animation.run
+                (Animation.zip4
+                    (Animation.fromLerp (ms 100) (Lerp.int 0 1))
+                    (Animation.fromLerp (ms 400) (Lerp.int 0 2))
+                    (Animation.fromLerp (ms 700) (Lerp.int 0 3))
+                    (Animation.fromLerp (ms 300) (Lerp.int 0 4)))))
+        (Finished ((1,2,3,4), (ms 300)))
+        "2. check timeLeft from longest animation"
+
+let check_timeLeft =
+    Test.is
+        (Anim.run (ms 300) (Animation.run (Animation.duration (ms 250) 1)))
+        (Finished (1,ms 50))
+        "1. 50ms is left when 250ms animation is runned for 300ms"
+
+    Test.is
+        (Anim.run (ms 350)
+            (Animation.run
+                (Animation.zip
+                    (Animation.duration (ms 250) 1)
+                    (Animation.duration (ms 300) 2))))
+        (Finished ((1,2),(ms 50)))
+        "2. 50ms is left when 250ms animation is runned for 300ms"
 
 
 Test.doneTesting ()
