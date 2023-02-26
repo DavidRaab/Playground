@@ -5,15 +5,6 @@ type AnimationResult<'a> =
     | Running  of 'a
     | Finished of 'a * TimeSpan
 
-module AnimationResult =
-    let isRunning = function
-        | Running   _    -> true
-        | Finished (_,_) -> false
-
-    let isFinished = function
-        | Running   _    -> false
-        | Finished (_,_) -> true
-
 type Anim<'a>      = Anim      of (TimeSpan -> AnimationResult<'a>)
 type Animation<'a> = Animation of (unit     -> Anim<'a>)
 
@@ -26,10 +17,8 @@ module Anim =
         | Running  v     -> v
         | Finished (v,t) -> v
 
-    let mapResult f anim =
-        match anim with
-        | Running   x    -> Running  (f x)
-        | Finished (x,t) -> Finished (f x, t)
+    let inline running x    = Running x
+    let inline finished x t = Finished (x,t)
 
 module Animation =
     let wrap x =
@@ -42,8 +31,8 @@ module Animation =
             Anim(fun dt ->
                 soFar <- soFar + dt
                 if   soFar < duration
-                then Running x
-                else Finished (x, soFar - duration)
+                then Anim.running  x
+                else Anim.finished x (soFar - duration)
             )
         )
 
@@ -64,8 +53,8 @@ module Animation =
             Anim(fun dt ->
                 soFar <- soFar + dt
                 if   soFar < duration
-                then Running  (f (soFar / duration))
-                else Finished (f 1.0, soFar - duration)
+                then Anim.running  (f (soFar / duration))
+                else Anim.finished (f 1.0) (soFar - duration)
             )
         )
 
@@ -89,8 +78,8 @@ module Animation =
             let anim = run anim
             Anim(fun dt ->
                 match Anim.run dt anim with
-                | Running   x    -> Running  (f x)
-                | Finished (x,t) -> Finished (f x, t)
+                | Running   x    -> Anim.running  (f x)
+                | Finished (x,t) -> Anim.finished (f x) t
             )
         )
 
@@ -100,10 +89,10 @@ module Animation =
             let anim  = run anim
             Anim(fun dt ->
                 match Anim.run dt fanim, Anim.run dt anim with
-                | Running   f,    Running   x    -> Running  (f x)
-                | Running   f,    Finished (x,_) -> Running  (f x)
-                | Finished (f,_), Running   x    -> Running  (f x)
-                | Finished (f,t), Finished (x,u) -> Finished (f x, min t u)
+                | Running   f,    Running   x    -> Anim.running  (f x)
+                | Running   f,    Finished (x,_) -> Anim.running  (f x)
+                | Finished (f,_), Running   x    -> Anim.running  (f x)
+                | Finished (f,t), Finished (x,u) -> Anim.finished (f x) (min t u)
             )
         )
 
@@ -140,10 +129,10 @@ module Animation =
                     | Running x      -> Running x
                     | Finished (x,t) ->
                         if finished then
-                            Finished (x,t)
+                            Anim.finished x t
                         else
                             current <- ValueNone
-                            Running x
+                            Anim.running x
             )
         )
 
@@ -160,9 +149,9 @@ module Animation =
             Anim(fun dt ->
                 if idx < last then
                     idx <- idx + 1
-                    Running  (Array.item  idx    data)
+                    Anim.running  (Array.item  idx    data)
                 else
-                    Finished (Array.item (idx+1) data, dt)
+                    Anim.finished (Array.item (idx+1) data) dt
             )
         )
 
