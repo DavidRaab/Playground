@@ -101,9 +101,11 @@ module Animation =
             let fanim = run fanim
             let anim  = run anim
             Anim(fun dt ->
-                match Anim.run dt fanim with
-                | Running f      -> Running  (f (Anim.value dt anim))
-                | Finished (f,t) -> Finished (f (Anim.value dt anim), t)
+                match Anim.run dt fanim, Anim.run dt anim with
+                | Running   f,    Running   x    -> Running  (f x)
+                | Running   f,    Finished (x,t) -> Running  (f x)
+                | Finished (f,t), Running   x    -> Running  (f x)
+                | Finished (f,t), Finished (x,_) -> Finished (f x, t)
             )
         )
 
