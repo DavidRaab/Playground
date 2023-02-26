@@ -55,7 +55,7 @@ module Animation =
     /// Transforms a lerping function into an animation. It takes `duration` time
     /// to run from 0.0 to 1.0. This is passed to the lerping function that must
     /// return the actual value.
-    let fromLerp f (duration:TimeSpan) =
+    let fromLerp (duration:TimeSpan) f =
         Animation(fun () ->
             let mutable soFar = TimeSpan.Zero
             Anim(fun dt ->
@@ -90,6 +90,20 @@ module Animation =
                 | Finished (x,t) -> Finished (f x, t)
             )
         )
+
+    let ap (fanim:Animation<'a -> 'b>) (anim:Animation<'a>) : Animation<'b> =
+        Animation(fun () ->
+            let fanim = run fanim
+            let anim  = run anim
+            Anim(fun dt ->
+                match Anim.run dt fanim with
+                | Running f      -> Running  (f (Anim.value dt anim))
+                | Finished (f,t) -> Finished (f (Anim.value dt anim), t)
+            )
+        )
+
+    let map2 f anim1 anim2 =
+        ap (map f anim1) anim2
 
     /// Flattens an Animation of Animations into a single animation
     let flatten anim =
@@ -169,15 +183,11 @@ module Animation =
             )
         )
 
-    // let flatten anims =
-    //     Animation(fun () ->
-    //         let anim = run anims
-    //         Anim(fun dt ->
-    //         )
-    //     )
-
     let bind f anim =
         flatten (map f anim)
+
+    let repeat count anim =
+        flatten (ofList (List.replicate count anim))
 
     // let append anim1 anim2 =
     //     flatten (ofList [anim1; anim2])
