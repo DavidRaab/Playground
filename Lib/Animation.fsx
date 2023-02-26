@@ -179,6 +179,14 @@ module Animation =
     let ofSeqDuration time xs =
         bind (duration time) (ofSeq xs)
 
+    /// zips two animations
+    let zip anim1 anim2 =
+        map2 (fun x y -> (x,y)) anim1 anim2
+
+    /// zips three animations
+    let zip3 anim1 anim2 anim3 =
+        map3 (fun x y z -> (x,y,z)) anim1 anim2 anim3
+
 
 module Lerp =
     let int (start:int) (stop:int) fraction =

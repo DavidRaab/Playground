@@ -101,7 +101,7 @@ Test.is
     [1;1;2;2;3;3;1;1;2;2;3;3;1;1;2;2;3;3]
     "Animation.repeat"
 
-let testMap2 =
+let testMap2_1 =
     let map2 =
         (Animation.toList
             (ms 100)
@@ -114,6 +114,20 @@ let testMap2 =
 
     Test.is        fsts (List.replicate 3 "anim1")      "Animation.map2 first"
     Test.floatList snds [1.666666667; 2.333333333; 3.0] "Animation.map2 second"
+
+let testMap2_2 =
+    let map2 =
+        (Animation.toList
+            (ms 100)
+            (Animation.zip
+                (Animation.fromLerp (ms 300) (Lerp.float 3 1))
+                (Animation.fromLerp (ms 300) (Lerp.float 1 3))))
+
+    let fsts = List.map fst map2
+    let snds = List.map snd map2
+
+    Test.floatList fsts [2.333333333; 1.666666667; 1.0] "Animation.zip first"
+    Test.floatList snds [1.666666667; 2.333333333; 3.0] "Animation.zip second"
 
 Test.is
     (Animation.toList
