@@ -101,7 +101,7 @@ Test.is
     [1;1;2;2;3;3;1;1;2;2;3;3;1;1;2;2;3;3]
     "Animation.repeat"
 
-let testMap2_1 =
+let testMap2 =
     let map2 =
         (Animation.toList
             (ms 100)
@@ -115,7 +115,7 @@ let testMap2_1 =
     Test.is        fsts (List.replicate 3 "anim1")      "Animation.map2 first"
     Test.floatList snds [1.666666667; 2.333333333; 3.0] "Animation.map2 second"
 
-let testMap2_2 =
+let testZip =
     let map2 =
         (Animation.toList
             (ms 100)
@@ -135,5 +135,18 @@ Test.is
         (Animation.ofSeqDuration (ms 200) [1;2;3]))
     [1;1;2;2;3;3]
     "Animation.ofSeqDuration"
+
+Test.is
+    (Animation.toList
+        (ms 100)
+        (Animation.zip
+            (Animation.fromLerp (ms  500) (Lerp.float 0 10))
+            (Animation.fromLerp (ms 1000) (Lerp.float 50 100))))
+    [
+        ( 2, 55); ( 4, 60); ( 6, 65); ( 8, 70); (10, 75)
+        (10, 80); (10, 85); (10, 90); (10, 95); (10, 100)
+    ]
+    "Check if longest animation is used"
+
 
 Test.doneTesting ()
