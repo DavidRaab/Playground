@@ -180,6 +180,28 @@ module Animation =
     let zip4 anim1 anim2 anim3 anim4 =
         map4 (fun x y z w -> x,y,z,w) anim1 anim2 anim3 anim4
 
+    /// Animation that runs from start to stop with the given speed per seconds
+    let speed start stop velocity =
+        if start <= stop then
+            Animation(fun () ->
+                let mutable current = start
+                Anim(fun dt ->
+                    current <- (current + (velocity * dt.TotalSeconds))
+                    if   current < stop
+                    then Anim.running  current
+                    else Anim.finished stop TimeSpan.Zero
+                )
+            )
+        else
+            Animation(fun () ->
+                let mutable current = start
+                Anim(fun dt ->
+                    current <- (current - (velocity * dt.TotalSeconds))
+                    if   current > stop
+                    then Anim.running  current
+                    else Anim.finished stop TimeSpan.Zero
+                )
+            )
 
 module Lerp =
     let int (start:int) (stop:int) fraction =
