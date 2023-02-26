@@ -26,6 +26,11 @@ module Anim =
         | Running  v     -> v
         | Finished (v,t) -> v
 
+    let mapResult f anim =
+        match anim with
+        | Running   x    -> Running  (f x)
+        | Finished (x,t) -> Finished (f x, t)
+
 module Animation =
     let wrap x =
         Animation(fun () -> Anim(fun deltaTime -> Finished(x,deltaTime)))
@@ -105,6 +110,12 @@ module Animation =
     let map2 f anim1 anim2 =
         ap (map f anim1) anim2
 
+    let map3 f anim1 anim2 anim3 =
+        ap (ap (map f anim1) anim2) anim3
+
+    let map4 f anim1 anim2 anim3 anim4 =
+        ap (ap (ap (map f anim1) anim2) anim3) anim4
+
     /// Flattens an Animation of Animations into a single animation
     let flatten anim =
         Animation(fun () ->
@@ -137,23 +148,19 @@ module Animation =
             )
         )
 
-    /// Turns a list of animations into an animation
+    /// converts a sequence into an animation
     let ofList xs =
-        if List.isEmpty xs then failwith "list cannot be empty in List.ofList"
+        let data = Array.ofSeq xs
+        if Array.length data = 0 then failwith "Sequence cannot be empty."
         Animation(fun () ->
-            let mutable xs   = xs
-            let mutable last = Unchecked.defaultof<_>
+            let mutable idx = -1
+            let last        = Array.length data - 2
             Anim(fun dt ->
-                match xs with
-                | []         -> Finished (last, TimeSpan.Zero)
-                | head::[]   ->
-                    last <- head
-                    xs   <- []
-                    Finished (head, TimeSpan.Zero)
-                | head::tail ->
-                    last <- head
-                    xs   <- tail
-                    Running head
+                if idx < last then
+                    idx <- idx + 1
+                    Running  (Array.item  idx    data)
+                else
+                    Finished (Array.item (idx+1) data, dt)
             )
         )
 
