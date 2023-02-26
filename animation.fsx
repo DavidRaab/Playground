@@ -115,4 +115,11 @@ let testMap2 =
     Test.is        fsts (List.replicate 3 "anim1")      "Animation.map2 first"
     Test.floatList snds [1.666666667; 2.333333333; 3.0] "Animation.map2 second"
 
+Test.is
+    (Animation.toList
+        (ms 100)
+        (Animation.ofSeqDuration (ms 200) [1;2;3]))
+    [1;1;2;2;3;3]
+    "Animation.ofSeqDuration"
+
 Test.doneTesting ()

@@ -137,8 +137,7 @@ module Animation =
                         Anim.run dt a
                 | ValueSome a ->
                     match Anim.run dt a with
-                    | Running x      ->
-                        Running x
+                    | Running x      -> Running x
                     | Finished (x,t) ->
                         if finished then
                             Finished (x,t)
@@ -147,6 +146,9 @@ module Animation =
                             Running x
             )
         )
+
+    let bind f anim =
+        flatten (map f anim)
 
     /// converts a sequence into an animation
     let ofSeq xs =
@@ -166,38 +168,16 @@ module Animation =
 
     /// Combine two animations by running the first then the second animation
     let append anim1 anim2 =
-        Animation(fun () ->
-            let anim1 = run anim1
-            let anim2 = run anim2
+        flatten (ofSeq [anim1; anim2])
 
-            let mutable first = true
-            let mutable left  = TimeSpan.Zero
-            Anim(fun dt ->
-                if first then
-                    match Anim.run dt anim1 with
-                    | Running x      -> Running x
-                    | Finished (x,t) ->
-                        left  <- t
-                        first <- false
-                        Running x
-                else
-                    if left = TimeSpan.Zero then
-                        Anim.run dt anim2
-                    else
-                        let dt = left + dt
-                        left <- TimeSpan.Zero
-                        Anim.run dt anim2
-            )
-        )
-
-    let bind f anim =
-        flatten (map f anim)
-
+    /// Repeats an animation a given time
     let repeat count anim =
         flatten (ofSeq (List.replicate count anim))
 
-    // let append anim1 anim2 =
-    //     flatten (ofList [anim1; anim2])
+    /// A sequence is turned into an Animation where every element
+    /// is repeated for `time` amount.
+    let ofSeqDuration time xs =
+        bind (duration time) (ofSeq xs)
 
 
 module Lerp =
