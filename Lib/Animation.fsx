@@ -149,7 +149,7 @@ module Animation =
         )
 
     /// converts a sequence into an animation
-    let ofList xs =
+    let ofSeq xs =
         let data = Array.ofSeq xs
         if Array.length data = 0 then failwith "Sequence cannot be empty."
         Animation(fun () ->
@@ -194,7 +194,7 @@ module Animation =
         flatten (map f anim)
 
     let repeat count anim =
-        flatten (ofList (List.replicate count anim))
+        flatten (ofSeq (List.replicate count anim))
 
     // let append anim1 anim2 =
     //     flatten (ofList [anim1; anim2])

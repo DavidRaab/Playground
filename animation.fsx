@@ -59,12 +59,12 @@ Test.floatList
     "Animation.append"
 
 Test.is
-    (Animation.toList (ms 100) (Animation.ofList [1..5]))
+    (Animation.toList (ms 100) (Animation.ofSeq [1..5]))
     [1..5]
     "Animation.ofList"
 
 Test.throws
-    (fun () -> Animation.ofList [] |> ignore)
+    (fun () -> Animation.ofSeq [] |> ignore)
     "Animation.ofList throws on empty list"
 
 Test.is
@@ -80,7 +80,7 @@ Test.is
     (Animation.toList
         (ms 100)
         (Animation.flatten
-            (Animation.ofList [
+            (Animation.ofSeq [
                 Animation.duration (ms 300) 1
                 Animation.duration (ms 300) 2
                 Animation.duration (ms 300) 3
@@ -93,7 +93,7 @@ Test.is
         (ms 100)
         (Animation.repeat 3
             (Animation.flatten
-                    (Animation.ofList [
+                    (Animation.ofSeq [
                         Animation.duration (ms 200) 1
                         Animation.duration (ms 200) 2
                         Animation.duration (ms 200) 3
