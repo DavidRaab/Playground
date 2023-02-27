@@ -15,12 +15,12 @@ Test.is (Animation.toList (sec 0) (Animation.wrap 5)) [5] "wrap(5) is [5]"
 
 Test.is
     (Anim.run (sec 1) (Animation.run (Animation.wrap 1)))
-    (Finished (1, sec 1))
+    (Anim.finished 1 (sec 1))
     "wrap 1 finished with 1 seconds left"
 
 // Animation that runs from 1.0 to 10.0 ...
 let test_toTen =
-    let toTen dt = Animation.fromLerp dt (Lerp.float 1 10)
+    let toTen = Animation.rangeFloat 1 10
 
     Test.floatList
         (Animation.toList (ms 500) (toTen (sec 1)))
@@ -39,12 +39,12 @@ let test_toTen =
 
 // Animation with Lerp.int
 Test.is
-    (Animation.toList (ms 100) (Animation.fromLerp (sec 1) (Lerp.int 0 5)))
+    (Animation.toList (ms 100) (Animation.rangeInt 0 5 (sec 1)))
     [0;1;1;2;2;3;3;4;4;5]
     "Lerp.int 0 5 with 100ms"
 
 Test.floatList
-    (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.fromLerp (sec 1) (Lerp.float 1 3))))
+    (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.rangeFloat 1 3 (sec 1))))
     [2.4; 2.8; 3.2; 3.6; 4.0; 4.4; 4.8; 5.2; 5.6; 6.0]
     "Animation.map"
 
@@ -53,8 +53,8 @@ Test.floatList
     (Animation.toList
         (ms 250)
         (Animation.append
-            (Animation.fromLerp (sec 1) (Lerp.float 1 3))
-            (Animation.fromLerp (sec 1) (Lerp.float 3 1) )))
+            (Animation.rangeFloat 1 3 (sec 1))
+            (Animation.rangeFloat 3 1 (sec 1))))
     [1.5; 2.0; 2.5; 3.0; 2.5; 2.0; 1.5; 1.0]
     "Animation.append"
 
@@ -107,7 +107,7 @@ let test_map2 =
             (ms 100)
             (Animation.map2 (fun x y -> (x,y))
                 (Animation.duration (ms 300) "anim1")
-                (Animation.fromLerp (ms 300) (Lerp.float 1 3))))
+                (Animation.rangeFloat 1 3 (ms 300))))
 
     let fsts = List.map fst map2
     let snds = List.map snd map2
@@ -120,8 +120,8 @@ let test_zip =
         (Animation.toList
             (ms 100)
             (Animation.zip
-                (Animation.fromLerp (ms 300) (Lerp.float 3 1))
-                (Animation.fromLerp (ms 300) (Lerp.float 1 3))))
+                (Animation.rangeFloat 3 1 (ms 300))
+                (Animation.rangeFloat 1 3 (ms 300))))
 
     let fsts = List.map fst map2
     let snds = List.map snd map2
@@ -141,8 +141,8 @@ let test_longest =
         (Animation.toList
             (ms 100)
             (Animation.zip
-                (Animation.fromLerp (ms  500) (Lerp.float 0 10))
-                (Animation.fromLerp (ms 1000) (Lerp.float 50 100))))
+                (Animation.rangeFloat 0   10 (ms  500))
+                (Animation.rangeFloat 50 100 (ms 1000))))
         [
             ( 2, 55); ( 4, 60); ( 6, 65); ( 8, 70); (10, 75)
             (10, 80); (10, 85); (10, 90); (10, 95); (10, 100)
@@ -153,17 +153,17 @@ let test_longest =
         (Anim.run (ms 1000)
             (Animation.run
                 (Animation.zip4
-                    (Animation.fromLerp (ms 100) (Lerp.int 0 1))
-                    (Animation.fromLerp (ms 400) (Lerp.int 0 2))
-                    (Animation.fromLerp (ms 700) (Lerp.int 0 3))
-                    (Animation.fromLerp (ms 300) (Lerp.int 0 4)))))
-        (Finished ((1,2,3,4), (ms 300)))
+                    (Animation.rangeInt 0 1 (ms 100))
+                    (Animation.rangeInt 0 2 (ms 400))
+                    (Animation.rangeInt 0 3 (ms 700))
+                    (Animation.rangeInt 0 4 (ms 300)))))
+        (Anim.finished (1,2,3,4) (ms 300))
         "2. check timeLeft from longest animation"
 
 let test_timeLeft =
     Test.is
         (Anim.run (ms 300) (Animation.run (Animation.duration (ms 250) 1)))
-        (Finished (1,ms 50))
+        (Anim.finished  1 (ms 50))
         "1. 50ms is left when 250ms animation is runned for 300ms"
 
     Test.is
@@ -172,7 +172,7 @@ let test_timeLeft =
                 (Animation.zip
                     (Animation.duration (ms 250) 1)
                     (Animation.duration (ms 300) 2))))
-        (Finished ((1,2),(ms 50)))
+        (Anim.finished (1,2) (ms 50))
         "2. 50ms is left when 250ms animation is runned for 300ms"
 
 let test_speed =
@@ -233,5 +233,30 @@ let test_speed =
 
     "2. thirds  of zip3 of speed"
     |> Test.floatList (thirds threes)  [21;22;23;24;25;26;27;28;29;30]
+
+let test_traverse =
+    let aseq = [
+        Animation.rangeFloat 1 10 (sec 1)
+        Animation.rangeFloat 1 5  (sec 1)
+        Animation.rangeFloat 10 1 (sec 1)
+    ]
+
+    Test.is
+        (Animation.toList (ms 100) (Animation.traverse (fun x -> x * 2.0) aseq))
+        [
+            [ 3.8; 2.8; 18.2]; [ 5.6;  3.6; 16.4]; [ 7.4; 4.4; 14.6]; [ 9.2; 5.2; 12.8];
+            [11.0; 6.0; 11.0]; [12.8;  6.8;  9.2]; [14.6; 7.6;  7.4]; [16.4; 8.4;  5.6];
+            [18.2; 9.2;  3.8]; [20.0; 10.0;  2.0]
+        ]
+        "Animation.traverse"
+
+    Test.is
+        (Animation.toList (ms 100) (Animation.sequence aseq))
+        [
+            [1.9; 1.4; 9.1]; [2.8; 1.8; 8.2]; [3.7; 2.2; 7.3]; [4.6; 2.6; 6.4];
+            [5.5; 3.0; 5.5]; [6.4; 3.4; 4.6]; [7.3; 3.8; 3.7]; [8.2; 4.2; 2.8];
+            [9.1; 4.6; 1.9]; [10.0; 5.0; 1.0]
+        ]
+        "Animation.sequence"
 
 Test.doneTesting ()

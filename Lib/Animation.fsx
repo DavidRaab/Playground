@@ -180,13 +180,13 @@ module Animation =
     let zip4 anim1 anim2 anim3 anim4 =
         map4 (fun x y z w -> x,y,z,w) anim1 anim2 anim3 anim4
 
-    /// Animation that runs from start to stop with the given speed per seconds
-    let speed start stop velocity =
+    /// Animation that runs from start to stop with the given `perSecond`
+    let speed start stop perSecond =
         if start <= stop then
             Animation(fun () ->
                 let mutable current = start
                 Anim(fun dt ->
-                    current <- (current + (velocity * dt.TotalSeconds))
+                    current <- (current + (perSecond * dt.TotalSeconds))
                     if   current < stop
                     then Anim.running  current
                     else Anim.finished stop TimeSpan.Zero
@@ -196,19 +196,31 @@ module Animation =
             Animation(fun () ->
                 let mutable current = start
                 Anim(fun dt ->
-                    current <- (current - (velocity * dt.TotalSeconds))
+                    current <- (current - (perSecond * dt.TotalSeconds))
                     if   current > stop
                     then Anim.running  current
                     else Anim.finished stop TimeSpan.Zero
                 )
             )
 
-module Lerp =
-    let int (start:int) (stop:int) fraction =
-        let start = float start
-        let stop  = float stop
-        int ((start * (1.0 - fraction)) + (stop * fraction))
+    let traverse f anims =
+        let folder a anims =
+            map2 (fun x xs -> f x :: xs) a anims
+        Seq.foldBack folder anims (wrap [])
 
-    let float start stop fraction =
-        ((start * (1.0 - fraction)) + (stop * fraction))
+    /// Converts a sequence of animations into an animation containing a list
+    let sequence anims =
+        traverse id anims
+
+    /// Animation from `start` to `stop` in the given `duration`
+    let rangeFloat start stop duration =
+        fromLerp duration (fun fraction ->
+            (start * (1.0 - fraction)) + (stop * fraction)
+        )
+
+    /// Animation from `start` to `stop` in the given `duration`
+    let rangeInt (start:int) (stop:int) duration =
+        fromLerp duration (fun fraction ->
+            int ((float start * (1.0 - fraction)) + (float stop * fraction))
+        )
 
