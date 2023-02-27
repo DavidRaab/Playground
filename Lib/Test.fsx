@@ -1,5 +1,6 @@
 module Test =
     let mutable Accuracy   = 0.0000001
+    let mutable Accuracy32 = 0.0000001f
     let mutable testsSoFar = 0
 
     /// Defines how many tests should be runned
@@ -78,6 +79,27 @@ module Test =
             | [],     y::expected -> fail name
             | x::got, y::expected ->
                 if   abs (x - y) < Accuracy
+                then loop got expected
+                else fail name
+
+        loop got expected
+
+    /// Check if two float32 lists are identical with the accuracy of `Test.Acurracy32`
+    let float32List (got:list<float32>) expected name =
+        let fail name =
+            testsSoFar <- testsSoFar + 1
+            printfn "not ok %d - %s" testsSoFar name
+            printfn "#   Failed test '%s'" name
+            printfn "#          got: %A" got
+            printfn "#     expected: %A" expected
+
+        let rec loop got expected =
+            match got, expected with
+            | [],     []          -> pass name
+            | x::got, []          -> fail name
+            | [],     y::expected -> fail name
+            | x::got, y::expected ->
+                if   abs (x - y) < Accuracy32
                 then loop got expected
                 else fail name
 
