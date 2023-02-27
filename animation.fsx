@@ -20,7 +20,7 @@ Test.is
 
 // Animation that runs from 1.0 to 10.0 ...
 let test_toTen =
-    let toTen = Animation.rangeFloat 1 10
+    let toTen = Animation.range 1 10
 
     Test.floatList
         (Animation.toList (ms 500) (toTen (sec 1)))
@@ -44,7 +44,7 @@ Test.is
     "Lerp.int 0 5 with 100ms"
 
 Test.floatList
-    (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.rangeFloat 1 3 (sec 1))))
+    (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.range 1 3 (sec 1))))
     [2.4; 2.8; 3.2; 3.6; 4.0; 4.4; 4.8; 5.2; 5.6; 6.0]
     "Animation.map"
 
@@ -53,8 +53,8 @@ Test.floatList
     (Animation.toList
         (ms 250)
         (Animation.append
-            (Animation.rangeFloat 1 3 (sec 1))
-            (Animation.rangeFloat 3 1 (sec 1))))
+            (Animation.range 1 3 (sec 1))
+            (Animation.range 3 1 (sec 1))))
     [1.5; 2.0; 2.5; 3.0; 2.5; 2.0; 1.5; 1.0]
     "Animation.append"
 
@@ -107,7 +107,7 @@ let test_map2 =
             (ms 100)
             (Animation.map2 (fun x y -> (x,y))
                 (Animation.duration (ms 300) "anim1")
-                (Animation.rangeFloat 1 3 (ms 300))))
+                (Animation.range 1 3 (ms 300))))
 
     let fsts = List.map fst map2
     let snds = List.map snd map2
@@ -120,8 +120,8 @@ let test_zip =
         (Animation.toList
             (ms 100)
             (Animation.zip
-                (Animation.rangeFloat 3 1 (ms 300))
-                (Animation.rangeFloat 1 3 (ms 300))))
+                (Animation.range 3 1 (ms 300))
+                (Animation.range 1 3 (ms 300))))
 
     let fsts = List.map fst map2
     let snds = List.map snd map2
@@ -141,8 +141,8 @@ let test_longest =
         (Animation.toList
             (ms 100)
             (Animation.zip
-                (Animation.rangeFloat 0   10 (ms  500))
-                (Animation.rangeFloat 50 100 (ms 1000))))
+                (Animation.range 0   10 (ms  500))
+                (Animation.range 50 100 (ms 1000))))
         [
             ( 2, 55); ( 4, 60); ( 6, 65); ( 8, 70); (10, 75)
             (10, 80); (10, 85); (10, 90); (10, 95); (10, 100)
@@ -236,9 +236,9 @@ let test_speed =
 
 let test_traverse =
     let aseq = [
-        Animation.rangeFloat 1 10 (sec 1)
-        Animation.rangeFloat 1 5  (sec 1)
-        Animation.rangeFloat 10 1 (sec 1)
+        Animation.range 1 10 (sec 1)
+        Animation.range 1 5  (sec 1)
+        Animation.range 10 1 (sec 1)
     ]
 
     Test.is
@@ -258,5 +258,15 @@ let test_traverse =
             [9.1; 4.6; 1.9]; [10.0; 5.0; 1.0]
         ]
         "Animation.sequence"
+
+Test.float32List
+    (Animation.toList (ms 200) (Animation.rangeFloat32 1f 10f (sec 1)))
+    [2.799999952f; 4.599999905f; 6.400000095f; 8.199999809f; 10.0f]
+    "Animation.rangeFloat32"
+
+Test.float32List
+    (Animation.toList (ms 200) (Animation.map float32 (Animation.range 1 10 (sec 1))))
+    (Animation.toList (ms 200) (Animation.rangeFloat32 1f 10f (sec 1)))
+    "Animation.range with map to float32 is the same as Animation.rangeFloat32"
 
 Test.doneTesting ()

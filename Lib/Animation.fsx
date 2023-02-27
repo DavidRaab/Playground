@@ -213,9 +213,16 @@ module Animation =
         traverse id anims
 
     /// Animation from `start` to `stop` in the given `duration`
-    let rangeFloat start stop duration =
+    let range start stop duration =
         fromLerp duration (fun fraction ->
             (start * (1.0 - fraction)) + (stop * fraction)
+        )
+
+    /// Animation from `start` to `stop` in the given `duration`
+    let rangeFloat32 (start:float32) (stop:float32) duration =
+        fromLerp duration (fun fraction ->
+            let fraction = float32 fraction
+            float32 ((start * (1.0f - fraction)) + (stop * fraction))
         )
 
     /// Animation from `start` to `stop` in the given `duration`
