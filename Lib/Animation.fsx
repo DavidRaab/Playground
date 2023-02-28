@@ -117,11 +117,26 @@ module Animation =
     let map2 f anim1 anim2 =
         ap (map f anim1) anim2
 
-    let map3 f anim1 anim2 anim3 =
-        ap (ap (map f anim1) anim2) anim3
+    let map3 f a1 a2 a3 =
+        ap (ap (map f a1) a2) a3
 
-    let map4 f anim1 anim2 anim3 anim4 =
-        ap (ap (ap (map f anim1) anim2) anim3) anim4
+    let map4 f a1 a2 a3 a4 =
+        ap (ap (ap (map f a1) a2) a3) a4
+
+    let map5 f a1 a2 a3 a4 a5 =
+        ap (ap (ap (ap (map f a1) a2) a3) a4) a5
+
+    let map6 f a1 a2 a3 a4 a5 a6 =
+        ap (ap (ap (ap (ap (map f a1) a2) a3) a4) a5) a6
+
+    let map7 f a1 a2 a3 a4 a5 a6 a7 =
+        ap (ap (ap (ap (ap (ap (map f a1) a2) a3) a4) a5) a6) a7
+
+    let map8 f a1 a2 a3 a4 a5 a6 a7 a8 =
+        ap (ap (ap (ap (ap (ap (ap (map f a1) a2) a3) a4) a5) a6) a7) a8
+
+    let map9 f a1 a2 a3 a4 a5 a6 a7 a8 a9 =
+        ap (ap (ap (ap (ap (ap (ap (ap (map f a1) a2) a3) a4) a5) a6) a7) a8) a9
 
     /// Flattens an Animation of Animations into a single animation
     let flatten anim =
