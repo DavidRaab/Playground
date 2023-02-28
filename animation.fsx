@@ -276,8 +276,24 @@ Test.float32List
     (Animation.toList (ms 200) (Animation.rangeFloat32 1f 10f (sec 1)))
     "Animation.range with map to float32 is the same as Animation.rangeFloat32"
 
+
+type Vector2 = {X:float; Y:float}
+let vec2 x y = {X = x;   Y = y}
+
+Test.is
+    (Animation.toList
+        (ms 100)
+        (Animation.map2 vec2 (Animation.range 1 100 (sec 1)) (Animation.range 1 50 (sec 1))))
+    [
+        vec2 10.9 5.9;  vec2 20.8 10.8; vec2 30.7 15.7; vec2 40.6 20.6; vec2 50.5 25.5;
+        vec2 60.4 30.4; vec2 70.3 35.3; vec2 80.2 40.2; vec2 90.1 45.1; vec2 100 50
+    ]
+    "Test a Vector2 animation"
+
+
+
 // Todo:
-// * Instead of passing an deltaTime expecting a fraction instead. 0.0 = start and 1.0 = end of animation
+// * Instead of passing an deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
 // * reversing an animation
 // * Anim.run & Anim.runTimestamp
 // * Animation.fadeInOut start stop -- run from start to stop and back to start in a given time
