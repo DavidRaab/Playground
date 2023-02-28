@@ -293,10 +293,11 @@ Test.is
 
 
 // Todo:
-// * Instead of passing an deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
-// * reversing an animation
-// * Anim.run & Anim.runTimestamp
-// * Animation.fadeInOut start stop -- run from start to stop and back to start in a given time
+// * Instead of passing a deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
+// * Easing functions
+// * start -> stop -> start in a given timeSpan
 // * Animation.loop -- animation loops forever
+// * Animation.take -- only take  TimeSpan of animation
+// * Animation.skip -- skip first TimeSpan of animation
 
 Test.doneTesting ()
