@@ -58,10 +58,10 @@ Test.floatList
     [1.5; 2.0; 2.5; 3.0; 2.5; 2.0; 1.5; 1.0]
     "Animation.append"
 
-// Test.is
-//     (Animation.toList (ms 100) (Animation.ofSeq [1..5]))
-//     [1..5]
-//     "Animation.ofList"
+Test.is
+    (Animation.toList (ms 100) (Animation.concatDuration (ms 100) [1..5]))
+    [1..5]
+    "Animation.ofList"
 
 Test.throws
     (fun () -> Animation.concat [] |> ignore)
@@ -130,9 +130,9 @@ let test_zip =
 Test.is
     (Animation.toList
         (ms 100)
-        (Animation.ofSeqDuration (ms 200) [1;2;3]))
+        (Animation.concatDuration (ms 200) [1;2;3]))
     [1;1;2;2;3;3]
-    "Animation.ofSeqDuration"
+    "Animation.concatDuration"
 
 let test_longest =
     Test.is
@@ -268,7 +268,6 @@ Test.float32List
     "Animation.range with map to float32 is the same as Animation.rangeFloat32"
 
 // Todo:
-// * rangeInt uses rounding
 // * Instead of passing an deltaTime expecting a fraction instead. 0.0 = start and 1.0 = end of animation
 // * reversing an animation
 // * Anim.run & Anim.runTimestamp

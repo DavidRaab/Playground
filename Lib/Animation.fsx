@@ -139,6 +139,7 @@ module Animation =
     let bind f anim =
         flatten (map f anim)
 
+    /// Like `sequence` but additionally a mapping function is applied to the resulting list
     let traverse f anims =
         let folder a anims =
             map2 (fun x xs -> f x :: xs) a anims
@@ -181,9 +182,8 @@ module Animation =
     let repeat count anim =
         concat (List.replicate count anim)
 
-    /// A sequence is turned into an Animation where every element
-    /// is repeated for `time` amount.
-    let ofSeqDuration time xs =
+    /// Applies `duration` to every element and turns it into a single animation
+    let concatDuration time xs =
         concat (Seq.map (duration time) xs)
 
     /// zips two animations
@@ -237,6 +237,6 @@ module Animation =
     /// Animation from `start` to `stop` in the given `duration`
     let rangeInt (start:int) (stop:int) duration =
         fromLerp duration (fun fraction ->
-            int ((float start * (1.0 - fraction)) + (float stop * fraction))
+            round ((float start * (1.0 - fraction)) + (float stop * fraction))
         )
 
