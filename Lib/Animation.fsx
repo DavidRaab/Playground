@@ -58,19 +58,37 @@ module Animation =
             )
         )
 
+    /// runs `animation` with `stepTime` and passes every value to an
+    /// `folder` function to compute a final state.
+    let fold folder stepTime (state:'State) animation =
+        let anim = run animation
+        let rec loop state =
+            match Anim.run stepTime anim with
+            | Running   x    -> loop (folder state x)
+            | Finished (x,_) -> folder state x
+        loop state
+
+    let foldBack folder stepTime animation (state:'State) =
+        let anim = run animation
+
+        // run animation to build stack
+        let stack = System.Collections.Generic.Stack()
+        let rec collect () =
+            match Anim.run stepTime anim with
+            | Running   x    -> stack.Push x; collect ()
+            | Finished (x,_) -> stack.Push x
+        collect ()
+
+        // create state from stack
+        let rec loop state =
+            match stack.TryPop() with
+            | true,  x -> loop (folder x state)
+            | false, _ -> state
+        loop state
+
     /// Turns a whole animation into a list by simulating it with `stepTime`
     let toList stepTime anim =
-        let anim = run anim
-        [
-            let mutable running = true
-            while running do
-                match Anim.run stepTime anim with
-                | Running x ->
-                    yield x
-                | Finished (x,_) ->
-                    running <- false
-                    yield x
-        ]
+        foldBack (fun x xs -> x :: xs) stepTime anim []
 
     /// returns a new animation whose values are applied to the given function.
     let map f anim =
@@ -175,7 +193,8 @@ module Animation =
     // concats mutliple animations into a single animation
     let concat anims =
         let anims = Array.ofSeq anims
-        if Array.length anims = 0 then failwith "Sequence cannot be empty."
+        if Array.length anims = 0 then
+            failwith "Sequence cannot be empty."
         Array.reduce append anims
 
     /// Repeats an animation a given time
