@@ -58,13 +58,13 @@ Test.floatList
     [1.5; 2.0; 2.5; 3.0; 2.5; 2.0; 1.5; 1.0]
     "Animation.append"
 
-Test.is
-    (Animation.toList (ms 100) (Animation.ofSeq [1..5]))
-    [1..5]
-    "Animation.ofList"
+// Test.is
+//     (Animation.toList (ms 100) (Animation.ofSeq [1..5]))
+//     [1..5]
+//     "Animation.ofList"
 
 Test.throws
-    (fun () -> Animation.ofSeq [] |> ignore)
+    (fun () -> Animation.concat [] |> ignore)
     "Animation.ofList throws on empty list"
 
 Test.is
@@ -79,12 +79,11 @@ Test.is
 Test.is
     (Animation.toList
         (ms 100)
-        (Animation.flatten
-            (Animation.ofSeq [
-                Animation.duration (ms 300) 1
-                Animation.duration (ms 300) 2
-                Animation.duration (ms 300) 3
-            ])))
+        (Animation.concat [
+            Animation.duration (ms 300) 1
+            Animation.duration (ms 300) 2
+            Animation.duration (ms 300) 3
+        ]))
     [1;1;1;2;2;2;3;3;3]
     "Animation.flatten and Animation.duration"
 
@@ -92,12 +91,11 @@ Test.is
     (Animation.toList
         (ms 100)
         (Animation.repeat 3
-            (Animation.flatten
-                    (Animation.ofSeq [
-                        Animation.duration (ms 200) 1
-                        Animation.duration (ms 200) 2
-                        Animation.duration (ms 200) 3
-                    ]))))
+            (Animation.concat [
+                Animation.duration (ms 200) 1
+                Animation.duration (ms 200) 2
+                Animation.duration (ms 200) 3
+            ])))
     [1;1;2;2;3;3;1;1;2;2;3;3;1;1;2;2;3;3]
     "Animation.repeat"
 
@@ -268,5 +266,13 @@ Test.float32List
     (Animation.toList (ms 200) (Animation.map float32 (Animation.range 1 10 (sec 1))))
     (Animation.toList (ms 200) (Animation.rangeFloat32 1f 10f (sec 1)))
     "Animation.range with map to float32 is the same as Animation.rangeFloat32"
+
+// Todo:
+// * rangeInt uses rounding
+// * Instead of passing an deltaTime expecting a fraction instead. 0.0 = start and 1.0 = end of animation
+// * reversing an animation
+// * Anim.run & Anim.runTimestamp
+// * Animation.fadeInOut start stop -- run from start to stop and back to start in a given time
+// * Animation.loop -- animation loops forever
 
 Test.doneTesting ()

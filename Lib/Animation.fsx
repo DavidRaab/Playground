@@ -139,34 +139,52 @@ module Animation =
     let bind f anim =
         flatten (map f anim)
 
-    /// converts a sequence into an animation
-    let ofSeq xs =
-        let data = Array.ofSeq xs
-        if Array.length data = 0 then failwith "Sequence cannot be empty."
-        Animation(fun () ->
-            let mutable idx = -1
-            let last        = Array.length data - 2
-            Anim(fun dt ->
-                if idx < last then
-                    idx <- idx + 1
-                    Anim.running  (Array.item  idx    data)
-                else
-                    Anim.finished (Array.item (idx+1) data) dt
-            )
-        )
+    let traverse f anims =
+        let folder a anims =
+            map2 (fun x xs -> f x :: xs) a anims
+        Seq.foldBack folder anims (wrap [])
+
+    /// Converts a sequence of animations into an animation containing a list
+    let sequence anims =
+        traverse id anims
 
     /// Combine two animations by running the first then the second animation
     let append anim1 anim2 =
-        flatten (ofSeq [anim1; anim2])
+        Animation(fun () ->
+            let anim1 = run anim1
+            let anim2 = run anim2
+
+            let mutable first    = true
+            let mutable timeLeft = TimeSpan.Zero
+            Anim(fun dt ->
+                if first then
+                    match Anim.run dt anim1 with
+                    | Running x      -> Running x
+                    | Finished (x,t) ->
+                        timeLeft <- t
+                        first    <- false
+                        Running x
+                else
+                    let dt = timeLeft + dt
+                    timeLeft <- TimeSpan.Zero
+                    Anim.run dt anim2
+            )
+        )
+
+    // concats mutliple animations into a single animation
+    let concat anims =
+        let anims = Array.ofSeq anims
+        if Array.length anims = 0 then failwith "Sequence cannot be empty."
+        Array.reduce append anims
 
     /// Repeats an animation a given time
     let repeat count anim =
-        flatten (ofSeq (List.replicate count anim))
+        concat (List.replicate count anim)
 
     /// A sequence is turned into an Animation where every element
     /// is repeated for `time` amount.
     let ofSeqDuration time xs =
-        bind (duration time) (ofSeq xs)
+        concat (Seq.map (duration time) xs)
 
     /// zips two animations
     let zip anim1 anim2 =
@@ -202,15 +220,6 @@ module Animation =
                     else Anim.finished stop TimeSpan.Zero
                 )
             )
-
-    let traverse f anims =
-        let folder a anims =
-            map2 (fun x xs -> f x :: xs) a anims
-        Seq.foldBack folder anims (wrap [])
-
-    /// Converts a sequence of animations into an animation containing a list
-    let sequence anims =
-        traverse id anims
 
     /// Animation from `start` to `stop` in the given `duration`
     let range start stop duration =
