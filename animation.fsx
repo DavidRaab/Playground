@@ -42,6 +42,16 @@ Test.is
     [0;0;0;0;0;1;1;1;1;1]
     "Animation.rangeInt 0 1 with 100ms"
 
+Test.is
+    (Animation.toList (ms 100) (Animation.rangeInt 0 2 (sec 2)))
+    [0;0;0;0;0;1;1;1;1;1;1;1;1;1;2;2;2;2;2;2]
+    "Animation.rangeInt 0 2 with 100ms"
+
+Test.is
+    (Animation.toList (ms 100) (Animation.rangeInt 0 3 (sec 3)))
+    [0;0;0;0;0;1;1;1;1;1;1;1;1;1;2;2;2;2;2;2;2;2;2;2;2;3;3;3;3;3]
+    "Animation.rangeInt 0 3 with 100ms"
+
 Test.floatList
     (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.range 1 3 (sec 1))))
     [2.4; 2.8; 3.2; 3.6; 4.0; 4.4; 4.8; 5.2; 5.6; 6.0]
