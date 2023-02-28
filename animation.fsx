@@ -25,23 +25,22 @@ let test_toTen =
     Test.floatList
         (Animation.toList (ms 500) (toTen (sec 1)))
         [5.5; 10]
-        "Lerp.float 1 10 in 1 seconds"
+        "Animation.range 1 10 in 1 seconds"
 
     Test.floatList
         (Animation.toList (ms 500) (toTen (sec 2)) )
         [3.25;  5.5;  7.75; 10.0]
-        "Lerp.float 1 10 in 2 seconds"
+        "Animation.range 1 10 in 2 seconds"
 
     Test.floatList
         (Animation.toList (ms 500) (toTen (sec 10)))
         [1.45; 1.9; 2.35; 2.8; 3.25; 3.7; 4.15; 4.6; 5.05; 5.5; 5.95; 6.4; 6.85; 7.3; 7.75; 8.2; 8.65; 9.1; 9.55; 10.0]
-        "Lerp.float 1 10 in 10 seconds"
+        "Animation.range 1 10 in 10 seconds"
 
-// Animation with Lerp.int
 Test.is
-    (Animation.toList (ms 100) (Animation.rangeInt 0 5 (sec 1)))
-    [0;1;1;2;2;3;3;4;4;5]
-    "Lerp.int 0 5 with 100ms"
+    (Animation.toList (ms 100) (Animation.rangeInt 0 1 (sec 1)))
+    [0;0;0;0;0;1;1;1;1;1]
+    "Animation.rangeInt 0 1 with 100ms"
 
 Test.floatList
     (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.range 1 3 (sec 1))))
