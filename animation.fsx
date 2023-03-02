@@ -293,6 +293,7 @@ Test.is
 
 
 // Todo:
+// * Data-structure instead of closures
 // * Instead of passing a deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
 // * Easing functions
 // * start -> stop -> start in a given timeSpan

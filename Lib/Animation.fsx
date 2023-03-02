@@ -212,13 +212,13 @@ module Animation =
             failwith "Sequence cannot be empty."
         Array.reduce append anims
 
-    /// Repeats an animation a given time
-    let repeat count anim =
-        concat (List.replicate count anim)
-
     /// Applies `duration` to every element and turns it into a single animation
     let concatDuration time xs =
         concat (Seq.map (duration time) xs)
+
+    /// Repeats an animation a given time
+    let repeat count anim =
+        concat (Array.replicate count anim)
 
     /// zips two animations
     let zip anim1 anim2 =
@@ -238,7 +238,7 @@ module Animation =
             Animation(fun () ->
                 let mutable current = start
                 Anim(fun dt ->
-                    current <- (current + (perSecond * dt.TotalSeconds))
+                    current <- current + (perSecond * dt.TotalSeconds)
                     if   current < stop
                     then Anim.running  current
                     else Anim.finished stop TimeSpan.Zero
@@ -248,7 +248,7 @@ module Animation =
             Animation(fun () ->
                 let mutable current = start
                 Anim(fun dt ->
-                    current <- (current - (perSecond * dt.TotalSeconds))
+                    current <- current - (perSecond * dt.TotalSeconds)
                     if   current > stop
                     then Anim.running  current
                     else Anim.finished stop TimeSpan.Zero
