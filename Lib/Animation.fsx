@@ -20,6 +20,14 @@ module Anim =
     let inline running x    = Running x
     let inline finished x t = Finished (x,t)
 
+module Ease =
+    let PI = System.Math.PI
+
+    let none = id
+
+    let inSine x =
+        1.0 - cos ((x * PI) / 2.0)
+
 module Animation =
     let wrap x =
         Animation(fun () -> Anim(fun deltaTime -> Finished(x,deltaTime)))
@@ -44,21 +52,27 @@ module Animation =
     let create f =
         Animation(fun () -> Anim f)
 
-    /// Transforms a lerping function into an animation. It takes `duration` time
-    /// to run from 0.0 to 1.0. This is passed to the lerping function that must
-    /// return the actual value.
-    let fromLerp (duration:TimeSpan) f =
+    /// Transforms a lerping function `f` into an animation. It takes `duration` time
+    /// to run from 0.0 to 1.0. Before this value is passed to the lerping function an `easing`
+    /// function is applied to the value.
+    let lerpWith (easing:float->float) (duration:TimeSpan) f =
         Animation(fun () ->
             let mutable soFar = TimeSpan.Zero
             Anim(fun dt ->
                 soFar <- soFar + dt
                 if   soFar < duration
-                then Anim.running  (f (soFar / duration))
-                else Anim.finished (f 1.0) (soFar - duration)
+                then Anim.running  (f (easing (soFar / duration)))
+                else Anim.finished (f (easing 1.0)) (soFar - duration)
             )
         )
 
-    /// runs `animation` with `stepTime` and passes every value to an
+    /// Transforms a lerping function into an animation. It takes `duration` time
+    /// to run from 0.0 to 1.0. This is passed to the lerping function that must
+    /// return the actual value.
+    let lerp duration f =
+        lerpWith Ease.none duration f
+
+    /// runs `animation` with `stepTime` and passes every value to a
     /// `folder` function to compute a final state.
     let fold folder stepTime (state:'State) animation =
         let anim = run animation
@@ -68,6 +82,9 @@ module Animation =
             | Finished (x,_) -> folder state x
         loop state
 
+    /// runs `animation` with `stepTime` and passes every value to a
+    /// `folder` function to compute the final state. The `folder` function
+    /// starts with the final value running from stop to start.
     let foldBack folder stepTime animation (state:'State) =
         let anim = run animation
 
@@ -220,15 +237,15 @@ module Animation =
     let repeat count anim =
         concat (Array.replicate count anim)
 
-    /// zips two animations
+    /// zip two animations
     let zip anim1 anim2 =
         map2 (fun x y -> x,y) anim1 anim2
 
-    /// zips three animations
+    /// zip three animations
     let zip3 anim1 anim2 anim3 =
         map3 (fun x y z -> x,y,z) anim1 anim2 anim3
 
-    /// zips three animations
+    /// zip four animations
     let zip4 anim1 anim2 anim3 anim4 =
         map4 (fun x y z w -> x,y,z,w) anim1 anim2 anim3 anim4
 
@@ -255,22 +272,26 @@ module Animation =
                 )
             )
 
-    /// Animation from `start` to `stop` in the given `duration`
-    let range start stop duration =
-        fromLerp duration (fun fraction ->
+    /// Animation from `start` to `stop` in the given `duration` with easing function `ease`
+    let rangeWith ease start stop duration =
+        lerpWith ease duration (fun fraction ->
             (start * (1.0 - fraction)) + (stop * fraction)
         )
 
     /// Animation from `start` to `stop` in the given `duration`
+    let range start stop duration =
+        rangeWith Ease.none start stop duration
+
+    /// Animation from `start` to `stop` in the given `duration`
     let rangeFloat32 (start:float32) (stop:float32) duration =
-        fromLerp duration (fun fraction ->
+        lerp duration (fun fraction ->
             let fraction = float32 fraction
             float32 ((start * (1.0f - fraction)) + (stop * fraction))
         )
 
     /// Animation from `start` to `stop` in the given `duration`
     let rangeInt (start:int) (stop:int) duration =
-        fromLerp duration (fun fraction ->
+        lerp duration (fun fraction ->
             round ((float start * (1.0 - fraction)) + (float stop * fraction))
         )
 

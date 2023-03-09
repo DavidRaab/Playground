@@ -290,10 +290,21 @@ Test.is
     ]
     "Test a Vector2 animation"
 
+Test.floatList
+    (Animation.toList
+        (ms 100)
+        (Animation.rangeWith Ease.inSine 1 10 (sec 1)))
+    [
+        1.110804935; 1.440491353; 1.980941282;
+        2.718847051; 3.636038969; 4.709932729;
+        5.914085502; 7.218847051; 8.592089815;
+        10.0
+    ]
+    "Animation.rangeWith Ease.inSine"
 
 
 // Todo:
-// * Data-structure instead of closures
+// * Data-structure instead of closures -- Failed attempt
 // * Instead of passing a deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
 // * Easing functions
 // * start -> stop -> start in a given timeSpan
