@@ -94,7 +94,7 @@ Test.is
             Animation.duration (ms 300) 3
         ]))
     [1;1;1;2;2;2;3;3;3]
-    "Animation.flatten and Animation.duration"
+    "Animation.concat and Animation.duration"
 
 Test.is
     (Animation.toList
@@ -302,12 +302,48 @@ Test.floatList
     ]
     "Animation.rangeWith Ease.inSine"
 
+let test_overshoot =
+    let anim =
+        (Animation.append
+            (Animation.range 1  10 (sec 1))
+            (Animation.range 10 1  (sec 1)))
+
+    Test.floatList
+        (Animation.toList (ms 270) anim)
+        [3.43; 5.86; 8.29; 9.28; 6.85; 4.42; 1.99; 1.0]
+        "correct values when there was time left on previous animation"
+
+    Test.is
+        (Anim.run (ms 2160) (Animation.run anim))
+        (Anim.finished 1.0 (ms 160))
+        "correct end value and remaining time on appended animation"
+
+Test.is
+    (Animation.toArray (ms 16) (Animation.range 0 1 (sec 1)))
+    (List.toArray (Animation.toList (ms 16) (Animation.range 0 1 (sec 1))))
+    "toList and toArray yields the same results when running"
+
+Test.is
+    (Animation.toList (ms 100)
+        (Animation.append
+            (Animation.range 1 10 (ms 500))
+            (Animation.range 10 1 (ms 500))))
+    (Animation.toList (ms 100) (Animation.roundTrip 1 10 (sec 1)))
+    "roundTrip is the same as appending two animation forwards and backwards"
+
+Test.ok
+    (Animation.equal
+        (ms 16)
+        (Animation.append
+            (Animation.range 1 10 (ms 500))
+            (Animation.range 10 1 (ms 500)))
+        (Animation.roundTrip 1 10 (sec 1)))
+    "Animation.equal"
 
 // Todo:
 // * Data-structure instead of closures -- Failed attempt
 // * Instead of passing a deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
 // * Easing functions
-// * start -> stop -> start in a given timeSpan
 // * Animation.loop -- animation loops forever
 // * Animation.take -- only take  TimeSpan of animation
 // * Animation.skip -- skip first TimeSpan of animation

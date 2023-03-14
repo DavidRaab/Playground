@@ -12,10 +12,10 @@ module Anim =
     let run deltaTime (Anim f) =
         f deltaTime
 
-    let value deltaTime anim =
-        match run deltaTime anim with
+    let value anim =
+        match anim with
         | Running  v     -> v
-        | Finished (v,t) -> v
+        | Finished (v,_) -> v
 
     let inline running x    = Running x
     let inline finished x t = Finished (x,t)
@@ -78,8 +78,8 @@ module Animation =
         let anim = run animation
         let rec loop state =
             match Anim.run stepTime anim with
-            | Running   x    -> loop (folder state x)
-            | Finished (x,_) -> folder state x
+            | Running  _ as a -> loop (folder state a)
+            | Finished _ as a -> folder state a
         loop state
 
     /// runs `animation` with `stepTime` and passes every value to a
@@ -92,8 +92,8 @@ module Animation =
         let stack = System.Collections.Generic.Stack()
         let rec collect () =
             match Anim.run stepTime anim with
-            | Running   x    -> stack.Push x; collect ()
-            | Finished (x,_) -> stack.Push x
+            | Running  _ as a -> stack.Push a; collect ()
+            | Finished _ as a -> stack.Push a
         collect ()
 
         // create state from stack
@@ -103,9 +103,15 @@ module Animation =
             | false, _ -> state
         loop state
 
+    /// Turns a whole animation into an array by simulating it with `stepTime`
+    let toArray stepTime anim =
+        let ra = ResizeArray<_>()
+        fold (fun _ x -> ra.Add(Anim.value x)) stepTime () anim
+        ra.ToArray()
+
     /// Turns a whole animation into a list by simulating it with `stepTime`
     let toList stepTime anim =
-        foldBack (fun x xs -> x :: xs) stepTime anim []
+        foldBack (fun x xs -> Anim.value x :: xs) stepTime anim []
 
     /// returns a new animation whose values are applied to the given function.
     let map f anim =
@@ -155,40 +161,6 @@ module Animation =
     let map9 f a1 a2 a3 a4 a5 a6 a7 a8 a9 =
         ap (ap (ap (ap (ap (ap (ap (ap (map f a1) a2) a3) a4) a5) a6) a7) a8) a9
 
-    /// Flattens an Animation of Animations into a single animation
-    let flatten anim =
-        Animation(fun () ->
-            let anim             = run anim
-            let mutable finished = false
-            let mutable current  = ValueNone
-            Anim(fun dt ->
-                match current with
-                | ValueNone ->
-                    match Anim.run dt anim with
-                    | Running a ->
-                        let a = run a
-                        current <- ValueSome a
-                        Anim.run dt a
-                    | Finished (a,_) ->
-                        let a = run a
-                        current  <- ValueSome a
-                        finished <- true
-                        Anim.run dt a
-                | ValueSome a ->
-                    match Anim.run dt a with
-                    | Running x      -> Running x
-                    | Finished (x,t) ->
-                        if finished then
-                            Anim.finished x t
-                        else
-                            current <- ValueNone
-                            Anim.running x
-            )
-        )
-
-    let bind f anim =
-        flatten (map f anim)
-
     /// Like `sequence` but additionally a mapping function is applied to the resulting list
     let traverse f anims =
         let folder a anims =
@@ -205,19 +177,17 @@ module Animation =
             let anim1 = run anim1
             let anim2 = run anim2
 
-            let mutable first    = true
-            let mutable timeLeft = TimeSpan.Zero
+            let mutable first = true
             Anim(fun dt ->
                 if first then
                     match Anim.run dt anim1 with
                     | Running x      -> Running x
                     | Finished (x,t) ->
-                        timeLeft <- t
                         first    <- false
-                        Running x
+                        if t = TimeSpan.Zero
+                        then Running x
+                        else Anim.run t anim2
                 else
-                    let dt = timeLeft + dt
-                    timeLeft <- TimeSpan.Zero
                     Anim.run dt anim2
             )
         )
@@ -295,3 +265,21 @@ module Animation =
             round ((float start * (1.0 - fraction)) + (float stop * fraction))
         )
 
+    /// creates an animation that runs from `start` to `stop` and back to `start` in
+    /// the given `duration`.
+    let roundTrip start stop (duration:TimeSpan) =
+        append
+            (range start stop  (duration / 2.0))
+            (range stop  start (duration / 2.0))
+
+    /// runs two animations with `stepTime` and check if they produce the same values
+    let equal stepTime anim1 anim2 =
+        let anim1 = run anim1
+        let anim2 = run anim2
+        let rec loop () =
+            match Anim.run stepTime anim1, Anim.run stepTime anim2 with
+            | Running  _     , Finished _      -> false
+            | Finished _     , Running  _      -> false
+            | Running  (x)   , Running  (y)    -> if x=y          then loop () else false
+            | Finished (x,t1), Finished (y,t2) -> if x=y && t1=t2 then true    else false
+        loop ()
