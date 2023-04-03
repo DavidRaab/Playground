@@ -367,20 +367,25 @@ Test.floatList
     (Animation.toList (ms 200)
         (Animation.take (sec 10)
             (Animation.roundTrip 0 10 (sec 2))))
-    [2.0; 4.0; 6.0; 8.0; 10.0; 8.0; 6.0; 4.0; 2.0; 0.0]
+    [2; 4; 6; 8; 10; 8; 6; 4; 2; 0]
     "Taking 10 seconds from a 2 seconds animation yields the whole animation"
 
 Test.floatList
     (Animation.toList (ms 200)
         (Animation.take (sec 1)
             (Animation.roundTrip 0 10 (sec 2))))
-    [2.0; 4.0; 6.0; 8.0; 10.0]
+    [2; 4; 6; 8; 10]
     "Taking 1 seconds from a 2 seconds animation yields half of the animation"
+
+Test.floatList
+    (Animation.roundTrip 0 10 (sec 2)
+    |> Animation.skip   (ms 500)
+    |> Animation.take   (sec 1)
+    |> Animation.toList (ms 100))
+    [6; 7; 8; 9; 10; 9; 8; 7; 6; 5]
+    "skip and take from a longer animation"
 
 // Todo:
 // * Easing functions
-// * Animation.loop -- animation loops forever
-// * Animation.take -- only take  TimeSpan of animation
-// * Animation.skip -- skip first TimeSpan of animation
 
 Test.doneTesting ()

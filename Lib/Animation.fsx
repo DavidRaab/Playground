@@ -334,6 +334,15 @@ module Animation =
             )
         )
 
+    let skip duration animation =
+        Animation(fun () ->
+            let anim = run animation
+            ignore (Anim.run duration anim)
+            Anim(fun dt ->
+                Anim.run dt anim
+            )
+        )
+
     /// runs two animations with `stepTime` and check if they produce the same values
     let equal stepTime anim1 anim2 =
         let anim1 = run anim1
