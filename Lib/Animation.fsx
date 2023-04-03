@@ -32,6 +32,7 @@ module Ease =
         1.0 - cos ((x * PI) / 2.0)
 
 module Animation =
+    /// Turns a single value into an animation
     let wrap x =
         Animation(fun () -> Anim(fun deltaTime -> Finished(x,deltaTime)))
 
@@ -334,6 +335,7 @@ module Animation =
             )
         )
 
+    /// Skips `duration` time of `animation`
     let skip duration animation =
         Animation(fun () ->
             let anim = run animation
