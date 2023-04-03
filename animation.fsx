@@ -38,19 +38,19 @@ let test_toTen =
         "Animation.range 1 10 in 10 seconds"
 
 Test.is
-    (Animation.toList (ms 100) (Animation.rangeInt 0 1 (sec 1)))
+    (Animation.toList (ms 100) (Animation.rangeI 0 1 (sec 1)))
     [0;0;0;0;0;1;1;1;1;1]
-    "Animation.rangeInt 0 1 with 100ms"
+    "Animation.rangeI 0 1 with 100ms"
 
 Test.is
-    (Animation.toList (ms 100) (Animation.rangeInt 0 2 (sec 2)))
+    (Animation.toList (ms 100) (Animation.rangeI 0 2 (sec 2)))
     [0;0;0;0;0;1;1;1;1;1;1;1;1;1;2;2;2;2;2;2]
-    "Animation.rangeInt 0 2 with 100ms"
+    "Animation.rangeI 0 2 with 100ms"
 
 Test.is
-    (Animation.toList (ms 100) (Animation.rangeInt 0 3 (sec 3)))
+    (Animation.toList (ms 100) (Animation.rangeI 0 3 (sec 3)))
     [0;0;0;0;0;1;1;1;1;1;1;1;1;1;2;2;2;2;2;2;2;2;2;2;2;3;3;3;3;3]
-    "Animation.rangeInt 0 3 with 100ms"
+    "Animation.rangeI 0 3 with 100ms"
 
 Test.floatList
     (Animation.toList (ms 100) (Animation.map (fun x -> x * 2.0) (Animation.range 1 3 (sec 1))))
@@ -160,10 +160,10 @@ let test_longest =
         (Anim.run (ms 1000)
             (Animation.run
                 (Animation.zip4
-                    (Animation.rangeInt 0 1 (ms 100))
-                    (Animation.rangeInt 0 2 (ms 400))
-                    (Animation.rangeInt 0 3 (ms 700))
-                    (Animation.rangeInt 0 4 (ms 300)))))
+                    (Animation.rangeI 0 1 (ms 100))
+                    (Animation.rangeI 0 2 (ms 400))
+                    (Animation.rangeI 0 3 (ms 700))
+                    (Animation.rangeI 0 4 (ms 300)))))
         (Anim.finished (1,2,3,4) (ms 300))
         "2. check timeLeft from longest animation"
 
@@ -267,14 +267,14 @@ let test_traverse =
         "Animation.sequence"
 
 Test.float32List
-    (Animation.toList (ms 200) (Animation.rangeFloat32 1f 10f (sec 1)))
+    (Animation.toList (ms 200) (Animation.rangeF 1f 10f (sec 1)))
     [2.799999952f; 4.599999905f; 6.400000095f; 8.199999809f; 10.0f]
-    "Animation.rangeFloat32"
+    "Animation.rangeF"
 
 Test.float32List
     (Animation.toList (ms 200) (Animation.map float32 (Animation.range 1 10 (sec 1))))
-    (Animation.toList (ms 200) (Animation.rangeFloat32 1f 10f (sec 1)))
-    "Animation.range with map to float32 is the same as Animation.rangeFloat32"
+    (Animation.toList (ms 200) (Animation.rangeF 1f 10f (sec 1)))
+    "Animation.range with map to float32 is the same as Animation.rangeF"
 
 
 type Vector2 = {X:float; Y:float}

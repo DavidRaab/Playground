@@ -1,11 +1,14 @@
 type TimeSpan = System.TimeSpan
 
-// [<Struct>]
+[<StructuralEquality; StructuralComparison>]
+[<Struct>]
 type AnimationResult<'a> =
-    | Running  of 'a
-    | Finished of 'a * TimeSpan
+    | Running  of value:'a
+    | Finished of struct ('a * TimeSpan)
 
+[<NoEquality;NoComparison>]
 type Anim<'a>      = Anim      of (TimeSpan -> AnimationResult<'a>)
+[<NoEquality;NoComparison>]
 type Animation<'a> = Animation of (unit     -> Anim<'a>)
 
 module Anim =
@@ -253,14 +256,14 @@ module Animation =
         rangeWith Ease.none start stop duration
 
     /// Animation from `start` to `stop` in the given `duration`
-    let rangeFloat32 (start:float32) (stop:float32) duration =
+    let rangeF (start:float32) (stop:float32) duration =
         lerp duration (fun fraction ->
             let fraction = float32 fraction
             float32 ((start * (1.0f - fraction)) + (stop * fraction))
         )
 
     /// Animation from `start` to `stop` in the given `duration`
-    let rangeInt (start:int) (stop:int) duration =
+    let rangeI (start:int) (stop:int) duration =
         lerp duration (fun fraction ->
             round ((float start * (1.0 - fraction)) + (float stop * fraction))
         )
@@ -283,3 +286,11 @@ module Animation =
             | Running  (x)   , Running  (y)    -> if x=y          then loop () else false
             | Finished (x,t1), Finished (y,t2) -> if x=y && t1=t2 then true    else false
         loop ()
+
+    /// Transforms the value of the animation to float32
+    let inline float32 animation =
+        map float32 animation
+
+    /// Transforms the value of the animation to int
+    let inline int animation =
+        map round animation
