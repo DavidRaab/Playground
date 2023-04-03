@@ -51,6 +51,13 @@ module Animation =
     let run (Animation f) =
         f ()
 
+    /// You directly pass the `time` value to an `animation` and get the value
+    /// at the specified animation time. Probably only useful in testing. For normal
+    /// animation you should call `Animation.run` on the `animation` and use `Anim.run`
+    /// instead.
+    let execute time animation =
+        Anim.run time (run animation)
+
     /// turns a function accepting a TimeSpan into an animation
     let create f =
         Animation(fun () -> Anim f)
@@ -274,6 +281,58 @@ module Animation =
         append
             (range start stop  (duration / 2.0))
             (range stop  start (duration / 2.0))
+
+    /// Loops an animation forever. When the animation finished it starts again
+    let loop animation =
+        Animation(fun () ->
+            let mutable anim = run animation
+            Anim(fun dt ->
+                match Anim.run dt anim with
+                | Running x      -> Anim.running x
+                | Finished (x,t) ->
+                    if t = TimeSpan.Zero then
+                        anim <- run animation
+                        Anim.running x
+                    else
+                        let rec loop t =
+                            anim <- run animation
+                            match Anim.run t anim with
+                            | Running x      -> Anim.running x
+                            | Finished (_,t) -> loop t
+                        loop t
+            )
+        )
+
+    /// Takes up to `duration` time of `animation` and then finish. If `animation`
+    /// is shorter than `duration` then it also finish earlier.
+    let take duration animation =
+        Animation(fun () ->
+            let anim             = run animation
+            let mutable soFar    = TimeSpan.Zero
+            let mutable finished = ValueNone
+            Anim(fun dt ->
+                match finished with
+                | ValueSome x -> Anim.finished x dt
+                | ValueNone   ->
+                    if (soFar + dt) < duration then
+                        soFar <- soFar + dt
+                        match Anim.run dt anim with
+                        | Running x      -> Anim.running x
+                        | Finished (x,t) ->
+                            finished <- ValueSome x
+                            Anim.finished x t
+                    else
+                        let uptoDuration = duration - soFar
+                        let remaining    = dt - uptoDuration
+                        match Anim.run uptoDuration anim with
+                        | Running x      ->
+                            finished <- ValueSome x
+                            Anim.finished x remaining
+                        | Finished (x,t) ->
+                            finished <- ValueSome x
+                            Anim.finished x (t+remaining)
+            )
+        )
 
     /// runs two animations with `stepTime` and check if they produce the same values
     let equal stepTime anim1 anim2 =

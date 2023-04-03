@@ -14,7 +14,7 @@ Test.is (Animation.toList (sec 1) (Animation.wrap 1)) [1] "wrap(1) is [1]"
 Test.is (Animation.toList (sec 0) (Animation.wrap 5)) [5] "wrap(5) is [5]"
 
 Test.is
-    (Anim.run (sec 1) (Animation.run (Animation.wrap 1)))
+    (Animation.execute (sec 1) (Animation.wrap 1))
     (Anim.finished 1 (sec 1))
     "wrap 1 finished with 1 seconds left"
 
@@ -157,28 +157,26 @@ let test_longest =
         "1. longest running animation is used"
 
     Test.is
-        (Anim.run (ms 1000)
-            (Animation.run
-                (Animation.zip4
-                    (Animation.rangeI 0 1 (ms 100))
-                    (Animation.rangeI 0 2 (ms 400))
-                    (Animation.rangeI 0 3 (ms 700))
-                    (Animation.rangeI 0 4 (ms 300)))))
+        (Animation.execute (ms 1000)
+            (Animation.zip4
+                (Animation.rangeI 0 1 (ms 100))
+                (Animation.rangeI 0 2 (ms 400))
+                (Animation.rangeI 0 3 (ms 700))
+                (Animation.rangeI 0 4 (ms 300))))
         (Anim.finished (1,2,3,4) (ms 300))
         "2. check timeLeft from longest animation"
 
 let test_timeLeft =
     Test.is
-        (Anim.run (ms 300) (Animation.run (Animation.duration (ms 250) 1)))
+        (Animation.execute (ms 300) (Animation.duration (ms 250) 1))
         (Anim.finished  1 (ms 50))
         "1. 50ms is left when 250ms animation is runned for 300ms"
 
     Test.is
-        (Anim.run (ms 350)
-            (Animation.run
-                (Animation.zip
-                    (Animation.duration (ms 250) 1)
-                    (Animation.duration (ms 300) 2))))
+        (Animation.execute (ms 350)
+            (Animation.zip
+                (Animation.duration (ms 250) 1)
+                (Animation.duration (ms 300) 2)))
         (Anim.finished (1,2) (ms 50))
         "2. 50ms is left when 250ms animation is runned for 300ms"
 
@@ -314,7 +312,7 @@ let test_overshoot =
         "correct values when there was time left on previous animation"
 
     Test.is
-        (Anim.run (ms 2160) (Animation.run anim))
+        (Animation.execute (ms 2160) anim)
         (Anim.finished 1.0 (ms 160))
         "correct end value and remaining time on appended animation"
 
@@ -340,9 +338,46 @@ Test.ok
         (Animation.roundTrip 1 10 (sec 1)))
     "Animation.equal"
 
+Test.floatList
+    (Animation.toList (ms 100)
+        (Animation.take (sec 1) (Animation.range 0 10 (sec 2))))
+    [0.5; 1.0; 1.5; 2.0; 2.5; 3.0; 3.5; 4.0; 4.5; 5.0]
+    "take 1 second of a 2 seconds animation"
+
+Test.floatList
+    (Animation.toList (ms 200)
+        (Animation.take (sec 4) (Animation.loop (Animation.roundTrip 0 10 (sec 2)))))
+    [
+        2.0; 4.0; 6.0; 8.0; 10.0; 8.0; 6.0; 4.0; 2.0; 0.0
+        2.0; 4.0; 6.0; 8.0; 10.0; 8.0; 6.0; 4.0; 2.0; 0.0
+    ]
+    "Take 4 seconds of an endless roundTrip animation"
+
+Test.is
+    (Animation.toList (ms 100) (Animation.take (sec 1) (Animation.wrap 5)))
+    [5]
+    "Taking more from a finished animation"
+
+Test.is
+    (Animation.execute (ms 100) (Animation.take (sec 1) (Animation.wrap 5)))
+    (Anim.finished 5 (ms 100))
+    "take 1 second of a wrapped value"
+
+Test.floatList
+    (Animation.toList (ms 200)
+        (Animation.take (sec 10)
+            (Animation.roundTrip 0 10 (sec 2))))
+    [2.0; 4.0; 6.0; 8.0; 10.0; 8.0; 6.0; 4.0; 2.0; 0.0]
+    "Taking 10 seconds from a 2 seconds animation yields the whole animation"
+
+Test.floatList
+    (Animation.toList (ms 200)
+        (Animation.take (sec 1)
+            (Animation.roundTrip 0 10 (sec 2))))
+    [2.0; 4.0; 6.0; 8.0; 10.0]
+    "Taking 1 seconds from a 2 seconds animation yields half of the animation"
+
 // Todo:
-// * Data-structure instead of closures -- Failed attempt
-// * Instead of passing a deltaTime expect a fraction instead. 0.0 = start and 1.0 = end of animation
 // * Easing functions
 // * Animation.loop -- animation loops forever
 // * Animation.take -- only take  TimeSpan of animation
