@@ -71,6 +71,7 @@ sub enum_hash($type, $values) {
 # In the arrayref of enum_positional there can be passed a string or
 # a hash. strings that are passed are converted to the hash-call
 sub enum_positional($type, $arrayref) {
+    # Create a new arrayref with all string converted to a hash
     my $args = [map {
         my $ref = reftype($_);
         # when not defined - the value $_ is a string/float
@@ -89,6 +90,8 @@ sub enum_positional($type, $arrayref) {
             die "enum_positional only expect string or hashref.\n";
         }
     } @$arrayref];
+
+    # call enum_hash with the newly created $args
     enum_hash($type, $args);
 }
 
@@ -121,6 +124,8 @@ BEGIN {
         { value => "some", check => 'is_some' },
         "none",
     ]);
+
+    # Creates one enum
     enum({
         type   => "bool",
         values => [
@@ -128,29 +133,60 @@ BEGIN {
             { value => 'false', check => 'is_false' },
         ],
     });
+
+    # Creates multiple enums at once
     enum([
         { type => 'color', values => [qw/red green blue/] },
         { type => 'error', values => [qw/red yellow/]     },
+        { type => 'fail',  values => [
+            { value => 'Ok', check => 'is_Ok' },
+            'err',
+        ]},
     ]);
+}
+
+use Test2::Bundle::More;
+
+sub is_num($got, $expected, $test) {
+    cmp_ok($got, '==', $expected, $test);
 }
 
 my $cred = color_red;
 my $ered = error_red;
 
-printf("is_cred \$cred: %d\n", is_color_red($cred)); # 1
-printf("is_cred \$ered: %d\n", is_color_red($ered)); # 0
-printf("is_ered \$cred: %d\n", is_error_red($cred)); # 0
-printf("is_ered \$ered: %d\n", is_error_red($ered)); # 1
+ok(is_color($cred),        '$cred is color');
+is_num(is_color($ered), 0, '$ered is not color');
+ok(is_color_red($cred),    '$cred is red');
+is_num(is_color_red($ered), 0, '$ered is not red');
+
+printf("is_color \$cred: %d\n", is_color($cred));     # 1
+printf("is_color \$ered: %d\n", is_color($ered));     # 0
+printf("is_cred \$cred: %d\n",  is_color_red($cred)); # 1
+printf("is_cred \$ered: %d\n",  is_color_red($ered)); # 0
+printf("is_ered \$cred: %d\n",  is_error_red($cred)); # 0
+printf("is_ered \$ered: %d\n",  is_error_red($ered)); # 1
+
 
 printf("is_bool true:  %d\n",  is_bool(true));  # 1
 printf("is_bool false: %d\n",  is_bool(false)); # 1
 printf("is_bool \$cred: %d\n", is_bool($cred)); # 0
 
+
 printf("is_decision true: %d\n",         is_decision(true));         # 0
 printf("is_decision decision_yes: %d\n", is_decision(decision_yes)); # 1
 
+
 my $some = some;
 my $none = option_none;
+printf("is_some \$some: %d\n",   is_some($some));        # 1
+printf("is_none \$none: %d\n",   is_option_none($none)); # 1
+printf("is_option \$some: %d\n", is_option($some));      # 1
+printf("is_option \$none: %d\n", is_option($none));      # 1
 
-printf("is_option \$some: %d\n", is_option($some));
-printf("is_option \$none: %d\n", is_option($none));
+
+my $ok  = Ok;
+my $err = fail_err;
+printf("is_fail \$ok: %d\n",    is_fail($ok));  # 1
+printf("is_fail \$error: %d\n", is_fail($err)); # 1
+
+done_testing;
