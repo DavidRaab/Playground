@@ -180,79 +180,60 @@ sub binary_search {
     $args->{start}    = $args->{start}    // 0;
     $args->{stop}     = $args->{stop}     // @{$args->{data}} - 1;
 
-    return binary_search_impl($args);
-}
+    # The main code is written in an anonmyous subroutine. with state
+    # this subroutine is only created once. This way the argument checking
+    # above is only done once. This improves performance greatly.
+    state $loop = sub {
+        my ( $args ) = @_;
 
-sub binary_search_impl {
-    my ( $args )      = @_;
-    #~ $args->{data}     = $args->{data}     // die "data not given";
-    #~ $args->{search}   = $args->{search}   // die "search not specified";
-    #~ $args->{comparer} = $args->{comparer} // sub { $a <=> $b };
-    #~ $args->{key_by}   = $args->{key_by}   // sub { $_ };
-    #~ $args->{start}    = $args->{start}    // 0;
-    #~ $args->{stop}     = $args->{stop}     // @{$args->{data}} - 1;
-    #~ $args->{debug}    = $args->{debug}    // 0;
+        my $start  = $args->{start};
+        my $stop   = $args->{stop};
 
-    #~ state $get_key = sub($args, $entry) {
-        #~ local $_ = $entry;
-        #~ return $args->{key_by}();
-    #~ };
+        # compute index to check
+        my $index = int (($start + $stop) / 2);
 
-    my $data   = $args->{data};
-    my $start  = $args->{start};
-    my $stop   = $args->{stop};
+        # argument for comparer
+        local $a = $args->{search};
+        local $_ = $args->{data}[$index];
+        local $b = $args->{key_by}();
 
-    #~ printf "start %d: %s   stop %d: %s\n",
-        #~ $start, np($get_key->($args, $data->[$start])),
-        #~ $stop,  np($get_key->($args, $data->[$stop]))
-            #~ if $args->{debug};
-
-    # compute index to check
-    my $index = int (($start + $stop) / 2);
-
-    #~ printf "index %d: %d\n",
-        #~ $index, $get_key->($args, $data->[$index]) if $args->{debug};
-
-    # argument for comparer
-    local $a = $args->{search};
-    local $_ = $data->[$index];
-    local $b = $args->{key_by}();
-
-    # when equal
-    my $result = $args->{comparer}();
-    if ( $result == 0 ) {
-        return $index;
-    }
-    # when $a is smaller
-    elsif ( $result < 0 ) {
-        if ( $start+1 == $stop ) {
-            if ( $index == $start ) { $args->{start} = $stop  }
-            else                    { $args->{start} = $start }
+        # when equal
+        my $result = $args->{comparer}();
+        if ( $result == 0 ) {
+            return $index;
         }
+        # when $a is smaller
+        elsif ( $result < 0 ) {
+            if ( $start+1 == $stop ) {
+                if ( $index == $start ) { $args->{start} = $stop  }
+                else                    { $args->{start} = $start }
+            }
+            else {
+                $args->{stop} = $index;
+            }
+        }
+        # when $a is greater
         else {
-            $args->{stop} = $index;
+            if ( $start+1 == $stop ) {
+                if ( $index == $start ) { $args->{start} = $stop  }
+                else                    { $args->{start} = $start }
+            }
+            else {
+                $args->{start} = $index;
+            }
         }
-    }
-    # when $a is greater
-    else {
-        if ( $start+1 == $stop ) {
-            if ( $index == $start ) { $args->{start} = $stop  }
-            else                    { $args->{start} = $start }
-        }
-        else {
-            $args->{start} = $index;
-        }
-    }
 
-    # When $start == $stop
-    if ( $start == $stop || $start > $stop ) {
         # we reached end and did not find what we are looking for
-        return -1;
-    }
-    # recurse
-    else {
-        goto &binary_search_impl;
-    }
+        if ( $start == $stop || $start > $stop ) {
+            return -1;
+        }
+        # tail-recursion
+        else {
+            goto __SUB__;
+        }
+    };
+
+    return $loop->($args);
 }
 
 # Sample Data
