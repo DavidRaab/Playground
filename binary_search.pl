@@ -192,7 +192,7 @@ sub binary_search {
         # compute index to check
         my $index = int (($start + $stop) / 2);
 
-        # argument for comparer
+        # call comparer
         local $a = $args->{search};
         local $_ = $args->{data}[$index];
         local $b = $args->{key_by}();
