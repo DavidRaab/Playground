@@ -4,7 +4,16 @@ use open ':std', ':encoding(UTF-8)';
 use Data::Printer;
 use List::Util qw(reduce);
 use Text::CSV;
+use Getopt::Long::Descriptive;
 use Benchmark qw(cmpthese);
+
+my ($opt, $usage) = describe_options(
+    'Usage: %c %o',
+    ['benchmark|b', 'Enable Benchmark'  , {default      => 0}],
+    ['help|h',      'Print this message', {shortcircuit => 1}],
+);
+$usage->die if $opt->help;
+
 
 # Example of Parsing CSV as Data
 my $csv = Text::CSV->new({
@@ -123,20 +132,22 @@ for my $i ( 1 .. 100 ) {
 done_testing;
 
 # Benchmarking
-cmpthese(-1, {
-    'Binary Search' => sub {
-        my $id = int rand($max_id);
-        binary_search({
-            search => $id,
-            key    => $by_id,
-            data   => \@big_data,
-        });
-    },
-    'Linear Search' => sub {
-        my $id = int rand($max_id);
-        linear_search($id, $by_id, \@big_data);
-    }
-});
+if ( $opt->benchmark ) {
+    cmpthese(-1, {
+        'Binary Search' => sub {
+            my $id = int rand($max_id);
+            binary_search({
+                search => $id,
+                key    => $by_id,
+                data   => \@big_data,
+            });
+        },
+        'Linear Search' => sub {
+            my $id = int rand($max_id);
+            linear_search($id, $by_id, \@big_data);
+        }
+    });
+}
 
 # Linear Search
 sub linear_search($search, $key_by, $data) {
@@ -202,12 +213,8 @@ sub binary_search {
     # when $a is smaller
     elsif ( $result < 0 ) {
         if ( $start+1 == $stop ) {
-            if ( $index == $start ) {
-                $args->{start} = $stop;
-            }
-            else {
-                $args->{start} = $start;
-            }
+            if ( $index == $start ) { $args->{start} = $stop  }
+            else                    { $args->{start} = $start }
         }
         else {
             $args->{stop} = $index;
@@ -216,12 +223,8 @@ sub binary_search {
     # when $a is greater
     else {
         if ( $start+1 == $stop ) {
-            if ( $index == $start ) {
-                $args->{start} = $stop;
-            }
-            else {
-                $args->{stop}  = $start;
-            }
+            if ( $index == $start ) { $args->{start} = $stop  }
+            else                    { $args->{start} = $start }
         }
         else {
             $args->{start} = $index;
