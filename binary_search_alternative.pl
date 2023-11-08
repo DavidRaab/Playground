@@ -160,16 +160,13 @@ sub linear_search($search, $key_by, $data) {
 }
 
 sub generate_lookup($get_key, $data) {
-    my %lookup_table;
-
     my $idx = 0;
-    for my $entry ( @$data ) {
-        local $_ = $entry;
+    my %lookup = map {
+        local $_ = $_;
         my $key  = $get_key->();
-        $lookup_table{$key} = $idx++;
-    }
-
-    return \%lookup_table;
+        $key => $idx++;
+    } @$data;
+    return \%lookup;
 }
 
 sub get_index($lookup, $key) {
