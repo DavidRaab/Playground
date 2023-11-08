@@ -179,31 +179,44 @@ sub binary_search {
     $args->{key_by}   = $args->{key_by}   // sub { $_ };
     $args->{start}    = $args->{start}    // 0;
     $args->{stop}     = $args->{stop}     // @{$args->{data}} - 1;
-    $args->{debug}    = $args->{debug}    // 0;
 
-    my $get_key = sub($entry) {
-        local $_ = $entry;
-        return $args->{key_by}();
-    };
+    return binary_search_impl($args);
+}
+
+sub binary_search_impl {
+    my ( $args )      = @_;
+    #~ $args->{data}     = $args->{data}     // die "data not given";
+    #~ $args->{search}   = $args->{search}   // die "search not specified";
+    #~ $args->{comparer} = $args->{comparer} // sub { $a <=> $b };
+    #~ $args->{key_by}   = $args->{key_by}   // sub { $_ };
+    #~ $args->{start}    = $args->{start}    // 0;
+    #~ $args->{stop}     = $args->{stop}     // @{$args->{data}} - 1;
+    #~ $args->{debug}    = $args->{debug}    // 0;
+
+    #~ state $get_key = sub($args, $entry) {
+        #~ local $_ = $entry;
+        #~ return $args->{key_by}();
+    #~ };
 
     my $data   = $args->{data};
     my $start  = $args->{start};
     my $stop   = $args->{stop};
 
-    printf "start %d: %s   stop %d: %s\n",
-        $start, np($get_key->($data->[$start])),
-        $stop,  np($get_key->($data->[$stop]))
-            if $args->{debug};
+    #~ printf "start %d: %s   stop %d: %s\n",
+        #~ $start, np($get_key->($args, $data->[$start])),
+        #~ $stop,  np($get_key->($args, $data->[$stop]))
+            #~ if $args->{debug};
 
     # compute index to check
     my $index = int (($start + $stop) / 2);
 
-    printf "index %d: %d\n",
-        $index, $get_key->($data->[$index]) if $args->{debug};
+    #~ printf "index %d: %d\n",
+        #~ $index, $get_key->($args, $data->[$index]) if $args->{debug};
 
     # argument for comparer
     local $a = $args->{search};
-    local $b = $get_key->($data->[$index]);
+    local $_ = $data->[$index];
+    local $b = $args->{key_by}();
 
     # when equal
     my $result = $args->{comparer}();
@@ -238,7 +251,7 @@ sub binary_search {
     }
     # recurse
     else {
-        goto &binary_search;
+        goto &binary_search_impl;
     }
 }
 
