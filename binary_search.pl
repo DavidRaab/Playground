@@ -73,25 +73,26 @@ use Test2::Bundle::More;
     }
 }
 
-my $by_id = sub { $_->{id} };
+my $comparer = sub { $a <=> $b->{id} };
 
 # Test on @data
 my $found_binary = binary_search({
-    data   => \@data,
-    search => 10,
-    key_by => $by_id,
+    data     => \@data,
+    search   => 10,
+    comparer => $comparer,
 });
 
 ## search for 10
-my $found_linear = linear_search(10, $by_id, \@data);
+my $key_id       = sub { $_->{id} };
+my $found_linear = linear_search(10, $key_id, \@data);
 cmp_ok($found_binary, '==', $found_linear, 'Same result on @data');
 cmp_ok($found_binary, '==', 3,             'Found at index 3');
 
 ## search for a key that doesn't exists
 cmp_ok(
-    linear_search(4, $by_id, \@data),
+    linear_search(4, $key_id, \@data),
     '==',
-    binary_search({search => 4, key_by => $by_id, data => \@data}),
+    binary_search({search => 4, comparer => $comparer, data => \@data}),
     'search id == 4'
 );
 
@@ -100,31 +101,31 @@ cmp_ok(
 ## Pick an existing key - we now that there are 100_000 elements in it
 ## i pick some in the middle
 my $search_for = $big_data[50_000]{id};
-my $bs = binary_search({search => $search_for, key_by => $by_id, data => \@big_data });
+my $bs = binary_search({search => $search_for, comparer => $comparer, data => \@big_data });
 cmp_ok(
-    $bs, '==', linear_search($search_for, $by_id, \@big_data),
+    $bs, '==', linear_search($search_for, $key_id, \@big_data),
     'Same result on @big_data'
 );
 ok($bs > -1, '$bs found entry');
 
 ## Search for a key that doesn't exists
-my $bs2 = binary_search({search => $max_id+1, key_by => $by_id, data => \@big_data });
-my $ls2 = linear_search($max_id+1, $by_id, \@big_data);
+my $bs2 = binary_search({search => $max_id+1, comparer => $comparer, data => \@big_data });
+my $ls2 = linear_search($max_id+1, $key_id, \@big_data);
 
 cmp_ok($bs2, '==', $ls2, 'Same result when key not exists');
 cmp_ok($bs2, '==', -1,   'key not exists and is bigger than data');
 cmp_ok(
-    binary_search({search => -100, key_by => $by_id, data => \@big_data}),
+    binary_search({search => -100, comparer => $comparer, data => \@big_data}),
     '==',
-    linear_search(-100, $by_id, \@big_data),
+    linear_search(-100, $key_id, \@big_data),
     'key does not exists and is small',
 );
 
-
+# random tests
 for my $i ( 1 .. 100 ) {
-    my $id    = int(rand($max_id));
-    my $b_idx = binary_search({search => $id, key_by => $by_id, data => \@big_data });
-    my $l_idx = linear_search($id, $by_id, \@big_data);
+    my $id    = int rand $max_id;
+    my $b_idx = binary_search({search => $id, comparer => $comparer, data => \@big_data });
+    my $l_idx = linear_search($id, $key_id, \@big_data);
 
     cmp_ok($b_idx, '==', $l_idx, "random check $i");
 }
@@ -135,16 +136,16 @@ done_testing;
 if ( $opt->benchmark ) {
     cmpthese(-1, {
         'Binary Search' => sub {
-            my $id = int rand($max_id);
+            my $id = int rand $max_id;
             binary_search({
-                search => $id,
-                key    => $by_id,
-                data   => \@big_data,
+                search   => $id,
+                comparer => $comparer,
+                data     => \@big_data,
             });
         },
         'Linear Search' => sub {
-            my $id = int rand($max_id);
-            linear_search($id, $by_id, \@big_data);
+            my $id = int rand $max_id;
+            linear_search($id, $key_id, \@big_data);
         }
     });
 }
@@ -166,21 +167,23 @@ sub linear_search($search, $key_by, $data) {
 # binary_search({
 #     data     => \@data,
 #     search   => 10,
-#     comparer => sub { $a <=> $b },
-#     key_by   => sub { $_ },
-#     start    => 0,
-#     stop     => scalar @data,
+#     comparer => sub { $a <=> $b },  # default
+#     start    => 0,                  # default
+#     stop     => scalar @data - 1,   # default
 # });
+# comparer ->
+#   By default comparer is a function to compare numbers.
+#   Inside comparer $a is set to $search and $b is an entry
+#   from the $data array.
 sub binary_search {
     my ( $args )      = @_;
     $args->{data}     = $args->{data}     // die "data not given";
     $args->{search}   = $args->{search}   // die "search not specified";
     $args->{comparer} = $args->{comparer} // sub { $a <=> $b };
-    $args->{key_by}   = $args->{key_by}   // sub { $_ };
     $args->{start}    = $args->{start}    // 0;
     $args->{stop}     = $args->{stop}     // @{$args->{data}} - 1;
 
-    # The main code is written in an anonmyous subroutine. with state
+    # The main code is written in an anonmyous subroutine. With state
     # this subroutine is only created once. This way the argument checking
     # above is only done once. This improves performance greatly.
     state $loop = sub {
@@ -193,12 +196,11 @@ sub binary_search {
         my $index = int (($start + $stop) / 2);
 
         # call comparer
-        local $a = $args->{search};
-        local $_ = $args->{data}[$index];
-        local $b = $args->{key_by}();
+        local $a   = $args->{search};
+        local $b   = $args->{data}[$index];
+        my $result = $args->{comparer}();
 
         # when equal
-        my $result = $args->{comparer}();
         if ( $result == 0 ) {
             return $index;
         }
