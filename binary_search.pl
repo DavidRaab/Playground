@@ -176,57 +176,43 @@ sub linear_search($search, $key_by, $data) {
 #   Inside comparer $a is set to $search and $b is an entry
 #   from the $data array.
 sub binary_search {
-    my ( $args )      = @_;
-    $args->{data}     = $args->{data}     // die "data not given";
-    $args->{search}   = $args->{search}   // die "search not specified";
-    $args->{comparer} = $args->{comparer} // sub { $a <=> $b };
-    $args->{start}    = $args->{start}    // 0;
-    $args->{stop}     = $args->{stop}     // @{$args->{data}} - 1;
+    my ( $args ) = @_;
+    my $data     = $args->{data}     // die "data not given";
+    my $search   = $args->{search}   // die "search not specified";
+    my $comparer = $args->{comparer} // sub { $a <=> $b };
+    my $start    = $args->{start}    // 0;
+    my $stop     = $args->{stop}     // @{$args->{data}} - 1;
 
-    # The main code is written in an anonmyous subroutine. With state
-    # this subroutine is only created once. This way the argument checking
-    # above is only done once. This improves performance greatly.
-    state $loop = sub {
-        my ( $args ) = @_;
-
-        my $start  = $args->{start};
-        my $stop   = $args->{stop};
-
+    # We set $a because our comparer function use this value
+    local $a = $search;
+    while ( $start <= $stop ) {
         # compute index to check
         my $index = int (($start + $stop) / 2);
 
         # call comparer
-        local $a   = $args->{search};
-        local $b   = $args->{data}[$index];
-        my $result = $args->{comparer}();
+        local $b   = $data->[$index];
+        my $result = $comparer->();
 
         # when comparer returns -1, it says that $a is smaller than $b.
         # $a is what we search for and $b is the current indexed entry from array.
         # So whatever we search must between $start and $index and we need
         # to modify $stop.
         if ( $result < 0 ) {
-            $args->{stop}  = $index - 1;
+            $stop  = $index - 1;
         }
         # the opposite. what we search for is between $index and $stop.
         # we modify $start to index.
         elsif ( $result > 0 ) {
-            $args->{start} = $index + 1;
+            $start = $index + 1;
         }
         # found entry
         else {
             return $index;
         }
+    }
 
-        # Repeat as long $start is smaller $stop
-        if ( $start <= $stop ) {
-            goto __SUB__;
-        }
-
-        # when entry does not exists
-        return -1;
-    };
-
-    return $loop->($args);
+    # when entry does not exists
+    return -1;
 }
 
 # Sample Data
