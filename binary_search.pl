@@ -183,15 +183,20 @@ sub binary_search {
     my $start    = $args->{start}    // 0;
     my $stop     = $args->{stop}     // @{$args->{data}} - 1;
 
-    # We set $a because our comparer function use this value
+    # Avoid lexical scoped variable inside loop - makes code faster
+    my ($index, $result) = (0,0);
+
+    # We set $a and $b because our comparer function use this values
     local $a = $search;
+    local $b = 0;
+
     while ( $start <= $stop ) {
         # compute index to check
-        my $index = int (($start + $stop) / 2);
+        $index = int (($start + $stop) / 2);
 
         # call comparer
-        local $b   = $data->[$index];
-        my $result = $comparer->();
+        $b      = $data->[$index];
+        $result = $comparer->();
 
         # when comparer returns -1, it says that $a is smaller than $b.
         # $a is what we search for and $b is the current indexed entry from array.
