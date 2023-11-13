@@ -201,7 +201,7 @@ sub binary_search {
             $stop  = $index - 1;
         }
         # the opposite. what we search for is between $index and $stop.
-        # we modify $start to index.
+        # we modify $start to $index.
         elsif ( $result > 0 ) {
             $start = $index + 1;
         }
