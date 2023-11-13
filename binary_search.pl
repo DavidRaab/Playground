@@ -200,39 +200,30 @@ sub binary_search {
         local $b   = $args->{data}[$index];
         my $result = $args->{comparer}();
 
-        # when equal
-        if ( $result == 0 ) {
+        # when comparer returns -1, it says that $a is smaller than $b.
+        # $a is what we search for and $b is the current indexed entry from array.
+        # So whatever we search must between $start and $index and we need
+        # to modify $stop.
+        if ( $result < 0 ) {
+            $args->{stop}  = $index - 1;
+        }
+        # the opposite. what we search for is between $index and $stop.
+        # we modify $start to index.
+        elsif ( $result > 0 ) {
+            $args->{start} = $index + 1;
+        }
+        # found entry
+        else {
             return $index;
         }
-        # when $a is smaller
-        elsif ( $result < 0 ) {
-            if ( $start+1 == $stop ) {
-                if ( $index == $start ) { $args->{start} = $stop  }
-                else                    { $args->{start} = $start }
-            }
-            else {
-                $args->{stop} = $index;
-            }
-        }
-        # when $a is greater
-        else {
-            if ( $start+1 == $stop ) {
-                if ( $index == $start ) { $args->{start} = $stop  }
-                else                    { $args->{start} = $start }
-            }
-            else {
-                $args->{start} = $index;
-            }
-        }
 
-        # we reached end and did not find what we are looking for
-        if ( $start == $stop || $start > $stop ) {
-            return -1;
-        }
-        # tail-recursion
-        else {
+        # Repeat as long $start is smaller $stop
+        if ( $start <= $stop ) {
             goto __SUB__;
         }
+
+        # when entry does not exists
+        return -1;
     };
 
     return $loop->($args);
