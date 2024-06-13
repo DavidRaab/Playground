@@ -59,8 +59,8 @@ has 'start_date' => (
     required => 1,
 );
 
-has 'entries' => ( 
-    is      => 'ro', 
+has 'entries' => (
+    is      => 'ro',
     isa     => ArrayRef[Entry],
     default => sub { [] },
     traits  => ['Array'],
@@ -88,7 +88,7 @@ no Moose;
 
 sub BUILD {
     my ( $self ) = @_;
-    
+
     # Check if dates are in ascending order
     for my $entry ( $self->elements ) {
         my $before = $self->before($entry);
@@ -102,7 +102,7 @@ sub BUILD {
     }
 }
 
-sub add { 
+sub add {
     state $check = compile(Strom, Entry);
     my ( $self, $entry ) = &$check;
     return Strom->new(
@@ -223,7 +223,7 @@ my $strom = (sub {
             date    => $_->[0],
             kwh     => $_->[1] - $init_kwh,
             comment => $_->[2],
-        ) 
+        )
     } @data;
 
     return Strom->new(
@@ -239,7 +239,7 @@ for my $entry ( $strom->elements ) {
     my $average = $strom->average_since_start($entry);
     my $comment = $entry->comment ? "-- " . $entry->comment : "";
 
-    printf "Datum: %s | Days: %3d | Kwh/Day: %.2f | 365-Total: %4d %s\n", 
+    printf "Datum: %s | Days: %3d | Kwh/Day: %.2f | 365-Total: %4d %s\n",
         $entry->date->dmy('.'),
         $days,
         $average,
