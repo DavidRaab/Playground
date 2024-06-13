@@ -175,6 +175,7 @@ sub linear_search($search, $key_by, $data) {
 #   By default comparer is a function to compare numbers.
 #   Inside comparer $a is set to $search and $b is an entry
 #   from the $data array.
+
 sub binary_search {
     my ( $args ) = @_;
     my $data     = $args->{data}     // die "data not given";
