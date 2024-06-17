@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use v5.10;
+use 5.036;
 use Data::Dump qw(dump dd);
 use Carp qw(croak);
 
@@ -14,14 +14,12 @@ my $bool       = qr/(?:true|false)/;
 my $int        = qr/\d+/;
 my $assignment = qr/(\w+) \s+ = \s+ ($bool|$int)/x;
 
-sub parse {
-    my ($str, $pos) = @_;
-    
-    pos $str = $pos || 0;
-    
+sub parse($str, $pos=0) {
+    pos $str = $pos;
+
     # End Condition
     return if $str =~ m/\G\z/gc;
-    
+
     if ( $str =~ /\G($bool)/gc ) {
         if ( $1 eq "true" ) {
             return ["bool", 1], parse($str, pos($str));
@@ -30,19 +28,19 @@ sub parse {
             return ["bool", 0], parse($str, pos($str));
         }
     }
-    
+
     if ( $str =~ m/\G(\s+)/gc ) {
         return ["whitespace", $1], parse($str, pos($str));
     }
-    
+
     if ( $str =~ m/\G($int)/gc ) {
         return ["int", $1], parse($str, pos($str));
     }
-    
+
     if ( $str =~ m/\G$assignment/gc ) {
         return ["assignment", $1, $2], parse($str, pos($str));
     }
-    
+
     # Start of Array
     if ( $str =~ m/\G \[ /gcx ) {
         my @values;
@@ -59,7 +57,7 @@ sub parse {
             die (sprintf "Error at beginning of: %s", substr($str,pos($str)));
         }
     }
-    
+
     return;
 }
 
