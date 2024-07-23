@@ -47,6 +47,7 @@ let helloToT =
         )
     )
 
+/// prints the value inside the timer
 let show timer = Timer.map (fun x -> printfn "%A" x; x) timer
 
 let numA   = show (Timer.delaySeconds 0.3 (Timer.wrap 3))
@@ -143,17 +144,18 @@ runUntilFinished 0.25 (
 )
 
 runUntilFinished 0.1 (
-    Timer.bind2 (fun x y ->
-        show (Timer.delaySeconds 0.2 (Timer.wrap (x,y)))
-    )
+    Timer.bind2 (fun x y -> show (Timer.delaySeconds 0.2 (Timer.wrap (x,y))))
         (show (Timer.seconds 0.3 (fun () -> 3)))
         (show (Timer.seconds 0.2 (fun () -> 2)))
 )
 
 runUntilFinished 0.1 (
-    Timer.bind5 (fun x y z w v ->
+    let f x y z w v =
         show (Timer.delaySeconds 0.2 (Timer.wrap (x,y,z,w,v)))
-    )
+
+    // Executes f after all timers are run, and passes the return values of
+    // each timer to f. f then returns another new timer
+    Timer.bind5 f
         (show (Timer.seconds 0.3 (fun () -> 5)))
         (show (Timer.seconds 0.2 (fun () -> 4)))
         (show (Timer.seconds 0.2 (fun () -> 3)))
