@@ -41,3 +41,6 @@ ask for some memory.
 
 You can do that in C too. Yeah, so you just write your own Garbage Collector and still
 call it "manual memory management". Whatever that means.
+
+Don't use -O2 to compile C code, otherwise compiler optimize the whole for-loop away,
+then program just returns 0 and does nothing.
