@@ -1,5 +1,4 @@
 #!/usr/bin/env -S dotnet fsi
-#load "Lib/Test.fsx"
 
 (* Testing the idea of having an array of mutable structs.
    It would be good to have a get that returns a pointer to
