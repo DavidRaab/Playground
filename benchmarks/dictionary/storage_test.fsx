@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
 #load "../../Lib/Test.fsx"
-#load "storage.fsx"
+#load "../../Lib/Storage.fs"
 
 open Test
 open Storage

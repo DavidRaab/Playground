@@ -1,4 +1,4 @@
-#!/usr/bin/env -S dotnet fsi
+namespace Storage
 
 type Dictionary<'a,'b> = System.Collections.Generic.Dictionary<'a,'b>
 

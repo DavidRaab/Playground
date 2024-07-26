@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 
 #load "Benchmark.fs"
-#load "storage.fsx"
+#load "../../Lib/Storage.fs"
 open System.Numerics
 open Benchmark
 open Storage
