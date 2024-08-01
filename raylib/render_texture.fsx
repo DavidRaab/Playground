@@ -3,6 +3,14 @@
 open Raylib_cs
 open System.Numerics
 
+let color r g b a =
+    let mutable c = Color()
+    c.R <- r
+    c.G <- g
+    c.B <- b
+    c.A <- a
+    c
+
 Raylib.InitWindow(800, 800, "Render Texture")
 
 let rt  = Raylib.LoadRenderTexture(800, 800)
@@ -16,6 +24,8 @@ while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
     Raylib.BeginTextureMode(rt)
     if CBool.op_Implicit <| Raylib.IsMouseButtonDown(MouseButton.Left) then
         Raylib.DrawCircleV(Raylib.GetMousePosition(), 2f, Color.RayWhite)
+    if CBool.op_Implicit <| Raylib.IsMouseButtonPressed(MouseButton.Right) then
+        Raylib.ClearBackground(color 0uy 0uy 0uy 0uy)
     Raylib.EndTextureMode()
 
     // we draw just the texture
