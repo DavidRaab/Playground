@@ -15,7 +15,7 @@ Those are the average result for one iteration doing 10K iterations.
 
 # Consideration
 
-Running fsx scripts don't get full performance and optimization that are normal compiled
+Running fsx scripts don't get full performance and optimization that a normal compiled
 project gives. Btw. running at just 1_000 iterations returned the same numbers.
 
 As for implementation. The second Storage implementation is much easier and less confusing.
