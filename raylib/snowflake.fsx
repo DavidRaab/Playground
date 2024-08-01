@@ -11,18 +11,26 @@ let stop  (Line (_,stop))  = stop
 let line start stop = Line (start,stop)
 
 let normalize vec = Vector2.Normalize(vec)
-let length line = Vector2.Distance(start line, stop line)
-let midpoint (Line (start,stop)) = (vec2 ((start.X + stop.X) / 2f) ((start.Y + stop.Y) / 2f))
+let length line   = Vector2.Distance(start line, stop line)
+
+/// returns the midpoint of a line
+let midpoint (Line (start,stop)) =
+    (vec2 ((start.X + stop.X) / 2f) ((start.Y + stop.Y) / 2f))
+
+/// the center point is the new tip. it is calculated from the mid point and
+/// goes orthogonal up from the line
 let centerPoint line =
     let d = (stop line) - (start line)
     (midpoint line) + (normalize (vec2 d.Y -d.X)) * ((length line) / 3f)
 
+/// returns the left and right point where a line has to be splited
 let lrPoint line =
     let dir = (normalize ((stop line) - (start line)))
     let l   = dir * ((length line) / 3f)
     let r   = dir * ((length line) / 3f * 2f)
     (start line) + l,(start line) + r
 
+/// turns a single line into 4 new lines
 let splitLine input =
     let s      = start input
     let e      = stop input
@@ -45,6 +53,7 @@ steps.Add([
 for i=1 to 6 do
     let last = steps.[ steps.Count-1 ]
     steps.Add(List.collect splitLine last)
+
 
 // Generetas a Koch Fractal Snowflake
 Raylib.InitWindow(800, 800, "Snowflake")
