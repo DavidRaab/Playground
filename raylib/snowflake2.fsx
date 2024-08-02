@@ -92,10 +92,11 @@ let mutable selection = NotStarted
 
 // Game Loop
 while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
+    // Get Mouse information
     let mousePos = Raylib.GetMousePosition()
+    let left     = buttonState MouseButton.Left
 
-    // Partial Application of MouseButton
-    let left = buttonState MouseButton.Left
+    // Handle mouse state for drawing lines
     selection <-
         match selection, left with
         | NotStarted,   Pressed  -> Start mousePos
