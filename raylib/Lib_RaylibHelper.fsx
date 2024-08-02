@@ -38,7 +38,6 @@ let getMouse () = {
     Right    = getMouseButtonState MouseButton.Right
 }
 
-
 let guiButton (rect:Rectangle) (text:string) : bool =
     let mouse = getMouse()
 
@@ -48,9 +47,9 @@ let guiButton (rect:Rectangle) (text:string) : bool =
     else Raylib.DrawRectangleRec(rect, Color.Gray)
 
     let fontSize = 24
-    let tw = float32 <| Raylib.MeasureText(text, fontSize)
-    let yText = rect.Y + (rect.Height / 2f - (float32 fontSize / 2f))
-    let xText = rect.X + (rect.Width - tw) / 2f
+    let tw       = float32 <| Raylib.MeasureText(text, fontSize)
+    let yText    = rect.Y + (rect.Height / 2f - (float32 fontSize / 2f))
+    let xText    = rect.X + (rect.Width - tw) / 2f
     Raylib.DrawText(text, int xText, int yText, fontSize, Color.Black)
     Raylib.DrawRectangleLinesEx(rect, 2f, Color.White)
 
