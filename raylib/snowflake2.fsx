@@ -14,36 +14,35 @@ open System.Numerics
 module Line =
     // Helper function
     let private vec2 x y = Vector2(x,y)
+    let private normalize vec = Vector2.Normalize(vec)
 
     // Line.T
     type T = Line of start:Vector2 * stop:Vector2
-    let create start stop = Line (start,stop)
 
+    let create start stop      = Line (start,stop)
     let start (Line (start,_)) = start
     let stop  (Line (_,stop))  = stop
-
-    let normalize vec = Vector2.Normalize(vec)
-    let length line   = Vector2.Distance(start line, stop line)
+    let length line            = Vector2.Distance(start line, stop line)
 
     /// returns the midpoint of a line
     let midpoint (Line (start,stop)) =
         (vec2 ((start.X + stop.X) / 2f) ((start.Y + stop.Y) / 2f))
 
-    /// the center point is the new tip. it is calculated from the mid point and
-    /// goes orthogonal up from the line
-    let centerPoint line =
-        let d = (stop line) - (start line)
-        (midpoint line) + (normalize (vec2 d.Y -d.X)) * ((length line) / 3f)
-
-    /// returns the left and right point where a line has to be splited
-    let lrPoint line =
-        let dir = (normalize ((stop line) - (start line)))
-        let l   = dir * ((length line) / 3f)
-        let r   = dir * ((length line) / 3f * 2f)
-        (start line) + l,(start line) + r
-
     /// turns a single line into 4 new lines
     let splitLine input =
+        /// the center point is the new tip. it is calculated from the mid point and
+        /// goes orthogonal up from the line
+        let centerPoint line =
+            let d = (stop line) - (start line)
+            (midpoint line) + (normalize (vec2 d.Y -d.X)) * ((length line) / 3f)
+
+        /// returns the left and right point where a line has to be splited
+        let lrPoint line =
+            let dir = (normalize ((stop line) - (start line)))
+            let l   = dir * ((length line) / 3f)
+            let r   = dir * ((length line) * (2f / 3f))
+            (start line) + l, (start line) + r
+
         let s      = start input
         let e      = stop input
         let center = centerPoint input
