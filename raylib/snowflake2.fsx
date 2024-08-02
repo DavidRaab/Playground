@@ -72,10 +72,6 @@ let buttonState button =
     elif Raylib.IsMouseButtonReleased button |> toBool then Released
     else Up
 
-// Generetas a Koch Fractal Snowflake
-Raylib.InitWindow(800, 800, "Snowflake")
-Raylib.SetTargetFPS(60)
-
 // Lines to Draw
 // Note: For Beginners. This creates an immutable List. List stays immutable.
 //       adding `mutable` only makes the variable itself mutable. So we can
@@ -89,6 +85,10 @@ type MouseSelection =
     | Drag   of Vector2 * Vector2
     | Finish of Vector2 * Vector2
 let mutable selection = NotStarted
+
+// Generetas a Koch Fractal Snowflake
+Raylib.InitWindow(800, 800, "Snowflake")
+Raylib.SetTargetFPS(60)
 
 // Game Loop
 while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
@@ -123,7 +123,10 @@ while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
     | NotStarted  -> ()
     | Start _     -> ()
     | Drag (s,e)  -> Raylib.DrawLineEx(s, e, 1f, Color.RayWhite)
-    | Finish(s,e) -> lines <- (line s e) :: lines
+    | Finish(s,e) ->
+        let line = (line s e)
+        if Line.length line > 3f then
+            lines <- line :: lines
 
     // Draw "split" button
     let rect = Rectangle(250f, 10f, 100f, 30f)
@@ -145,6 +148,9 @@ while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
 
     if left = Pressed && (Raylib.CheckCollisionPointRec(mousePos, rect) |> toBool) then
         lines <- []
+
+    // Info how many Lines are drawn
+    Raylib.DrawText((sprintf "Lines %d" (List.length lines)), 10, 10, 24, Color.Yellow)
 
     // Draws the lines
     for line in lines do
