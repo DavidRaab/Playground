@@ -12,7 +12,7 @@ open System.Numerics
 // Some constants / Game state
 let screenWidth, screenHeight    = 1200, 800
 let defaultSpeed                 = 100f
-let circleAmount                 = 1000
+let circleAmount                 = 100
 let gravityAmount                = 20f
 let circleMinSize, circleMaxSize = 5f, 10f
 let mutable showVelocity         = false
@@ -107,7 +107,7 @@ let mutable circles =
 
 // Game Loop
 Raylib.InitWindow(screenWidth, screenHeight, "Verlet Integration")
-// Raylib.SetTargetFPS(60)
+Raylib.SetTargetFPS(60)
 while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
     let dt = Raylib.GetFrameTime()
 
