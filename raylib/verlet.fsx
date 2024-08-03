@@ -13,7 +13,7 @@ open System.Numerics
 let screenWidth, screenHeight    = 1200, 800
 let defaultSpeed                 = 100f
 let circleAmount                 = 100
-let gravityAmount                = 20f
+let gravity                      = vec2 0f 100f
 let circleMinSize, circleMaxSize = 5f, 10f
 let mutable showVelocity         = false
 
@@ -39,7 +39,7 @@ module Circle =
     let randomCircle (speed:float32) = {
         Position     = vec2 (nextF 0f (float32 screenWidth)) (nextF 0f (float32 screenHeight))
         Velocity     = (vec2 (nextF -1f 1f) (nextF -1f 1f)) * speed
-        Acceleration = (vec2 0f 9.81f) * gravityAmount
+        Acceleration = gravity
         Radius       = nextF circleMinSize circleMaxSize
         Color        =
             match nextI 0 5 with
@@ -75,7 +75,7 @@ module Circle =
                 if distance >= neededDistance then
                     ()
                 else
-                    let toOther     = Vector2.Normalize(toOther)
+                    let toOther     = toOther / distance // normalize vector
                     let overlap     = (neededDistance - distance)
                     let halfOverlap = (toOther * overlap) / 2f
                     circle.Position <- circle.Position - halfOverlap
