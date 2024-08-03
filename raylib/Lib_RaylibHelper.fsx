@@ -8,6 +8,9 @@ open System.Numerics
 let inline toBool (cbool:CBool) : bool =
     CBool.op_Implicit cbool
 
+let inline vec2 x y     = Vector2(x,y)
+let inline rect x y w h = Rectangle(x,y,w,h)
+
 // A nicer way to get Mouse State
 type MouseButtonState =
     | Up
