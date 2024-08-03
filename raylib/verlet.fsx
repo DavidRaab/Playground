@@ -10,11 +10,12 @@ open System.Numerics
 // https://www.youtube.com/watch?v=lS_qeBy3aQI  --  Writing a Physics Engine from Scratch
 
 // Some constants / Game state
-let screenWidth, screenHeight = 800, 800
-let defaultSpeed              = 100f
-let circleAmount              = 20
-let gravityAmount             = 20f
-let mutable showVelocity      = false
+let screenWidth, screenHeight    = 1200, 800
+let defaultSpeed                 = 100f
+let circleAmount                 = 1000
+let gravityAmount                = 20f
+let circleMinSize, circleMaxSize = 5f, 10f
+let mutable showVelocity         = false
 
 // Helper functions
 let isSame x y    = LanguagePrimitives.PhysicalEquality x y
@@ -36,7 +37,7 @@ module Circle =
         Position     = vec2 (nextF 0f (float32 screenWidth)) (nextF 0f (float32 screenHeight))
         Velocity     = (vec2 (nextF -1f 1f) (nextF -1f 1f)) * speed
         Acceleration = (vec2 0f 9.81f) * gravityAmount
-        Radius       = nextF 10f 30f
+        Radius       = nextF circleMinSize circleMaxSize
         Color        =
             match nextI 0 5 with
             | 0 -> Color.DarkBlue
@@ -106,21 +107,22 @@ let mutable circles =
 
 // Game Loop
 Raylib.InitWindow(screenWidth, screenHeight, "Verlet Integration")
-Raylib.SetTargetFPS(60)
+// Raylib.SetTargetFPS(60)
 while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
     let dt = Raylib.GetFrameTime()
 
     Raylib.BeginDrawing ()
     Raylib.ClearBackground(Color.Black)
+    Raylib.DrawFPS(0,0)
     for circle in circles do
         Circle.update circle dt
         Circle.resolveCollision circle circles
         Circle.resolveScreenBoundaryCollision circle
         Circle.draw   circle
 
-    if guiButton (rect 300f 10f 150f 30f) "New Circles" then
+    if guiButton (rect 325f 10f 150f 30f) "New Circles" then
         circles <- List.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
-    if guiButton (rect 25f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
+    if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity
     Raylib.EndDrawing ()
 
