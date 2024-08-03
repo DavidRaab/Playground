@@ -17,6 +17,9 @@ let gravityAmount                = 20f
 let circleMinSize, circleMaxSize = 5f, 10f
 let mutable showVelocity         = false
 
+// Class Alias
+type rl = Raylib
+
 // Helper functions
 let isSame x y    = LanguagePrimitives.PhysicalEquality x y
 let rng           = System.Random ()
@@ -52,9 +55,9 @@ module Circle =
         circle.Velocity <- circle.Velocity + (circle.Acceleration * dt)
 
     let draw circle =
-        Raylib.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
+        rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
         if showVelocity then
-            Raylib.DrawLine (
+            rl.DrawLine (
                 int circle.Position.X, int circle.Position.Y,
                 int (circle.Position.X + circle.Velocity.X),
                 int (circle.Position.Y + circle.Velocity.Y),
@@ -106,14 +109,14 @@ let mutable circles =
     List.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
 
 // Game Loop
-Raylib.InitWindow(screenWidth, screenHeight, "Verlet Integration")
-Raylib.SetTargetFPS(60)
-while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
-    let dt = Raylib.GetFrameTime()
+rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
+rl.SetTargetFPS(60)
+while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
+    let dt = rl.GetFrameTime()
 
-    Raylib.BeginDrawing ()
-    Raylib.ClearBackground(Color.Black)
-    Raylib.DrawFPS(0,0)
+    rl.BeginDrawing ()
+    rl.ClearBackground(Color.Black)
+    rl.DrawFPS(0,0)
     for circle in circles do
         Circle.update circle dt
         Circle.resolveCollision circle circles
@@ -124,6 +127,6 @@ while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
         circles <- List.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity
-    Raylib.EndDrawing ()
+    rl.EndDrawing ()
 
-Raylib.CloseWindow()
+rl.CloseWindow()
