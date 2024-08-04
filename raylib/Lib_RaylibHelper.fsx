@@ -3,6 +3,9 @@
 open Raylib_cs
 open System.Numerics
 
+// Type alias for Raylib
+type rl = Raylib
+
 // Annoying CBool in Raylib-cs. Most functions return a CBool. Not a problem in
 // C# because of implicit type conversion. But F# has explicit type conversion
 let inline toBool (cbool:CBool) : bool =
