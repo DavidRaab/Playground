@@ -7,6 +7,9 @@ open System.Numerics
 
 let screenWidth, screenHeight = 800, 800
 
+// Definition of a Moveable, also could just be a Rectangle, but then a function
+// needs to pass a byref. So instead of this i turn it into its own reference
+// type. At least assigning an additional Color makes it somehow more useful.
 type MoveableRect = {
     mutable Rect: Rectangle
     Color:        Color
@@ -16,31 +19,27 @@ type Drageable =
     | InDrag of rect:MoveableRect * offset:Vector2
     | NoDrag
 
-let moveables = [
-    { Rect = rect 100f 100f 100f 100f; Color = Color.Yellow }
-    { Rect = rect 200f 200f 100f 100f; Color = Color.Red    }
-    { Rect = rect 300f 300f 100f 100f; Color = Color.Blue   }
-]
-
-let processMoveables mouse selection moveables =
+let processMoveables selection moveables mouse =
     match selection, mouse.Left with
-        | NoDrag, Down
-        | NoDrag, Pressed ->
+        | NoDrag,   (Up|Released) -> NoDrag
+        | InDrag _, (Up|Released) -> NoDrag
+        | NoDrag, (Down|Pressed) ->
             let mutable selected = NoDrag
             for moveable in moveables do
                 let r = moveable.Rect
                 if toBool <| rl.CheckCollisionPointRec(mouse.Position, r) then
                     selected <- InDrag (moveable, ((vec2 r.X r.Y) - mouse.Position))
             selected
-        | NoDrag, Up
-        | NoDrag, Released -> NoDrag
-        | InDrag (m,offset), Pressed
-        | InDrag (m,offset), Down    ->
+        | InDrag (m,offset), (Down|Pressed) ->
             let r = m.Rect
             m.Rect <- rect (mouse.Position.X+offset.X) (mouse.Position.Y+offset.Y) r.Width r.Height
             InDrag (m,offset)
-        | InDrag _, Up
-        | InDrag _, Released -> NoDrag
+
+let moveables = [
+    { Rect = rect 100f 100f 100f 100f; Color = Color.Yellow }
+    { Rect = rect 200f 200f 100f 100f; Color = Color.Red    }
+    { Rect = rect 300f 300f 100f 100f; Color = Color.Blue   }
+]
 
 let mutable selection = NoDrag
 
@@ -53,7 +52,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
-    selection <- processMoveables mouse selection moveables
+    selection <- processMoveables selection moveables mouse
 
     for mov in moveables do
         rl.DrawRectangleRec(mov.Rect, mov.Color)
