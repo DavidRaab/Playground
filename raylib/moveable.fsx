@@ -26,15 +26,12 @@ let processMoveables mouse selection moveables =
     match selection, mouse.Left with
         | NoDrag, Down
         | NoDrag, Pressed ->
-            let rec loop moveables =
-                match moveables with
-                | []               -> NoDrag
-                | moveable :: rest ->
-                    let rect = moveable.Rect
-                    if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect)
-                    then InDrag (moveable, ((vec2 rect.X rect.Y) - mouse.Position))
-                    else loop rest
-            loop moveables
+            let mutable selected = NoDrag
+            for moveable in moveables do
+                let r = moveable.Rect
+                if toBool <| rl.CheckCollisionPointRec(mouse.Position, r) then
+                    selected <- InDrag (moveable, ((vec2 r.X r.Y) - mouse.Position))
+            selected
         | NoDrag, Up
         | NoDrag, Released -> NoDrag
         | InDrag (m,offset), Pressed
@@ -44,7 +41,6 @@ let processMoveables mouse selection moveables =
             InDrag (m,offset)
         | InDrag _, Up
         | InDrag _, Released -> NoDrag
-
 
 let mutable selection = NoDrag
 
