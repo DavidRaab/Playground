@@ -13,6 +13,9 @@ let inline toBool (cbool:CBool) : bool =
 
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
+let rng                 = System.Random ()
+let nextI min max       = rng.Next(min,max)
+let nextF min max       = min + (rng.NextSingle() * (max-min))
 
 // A nicer way to get Mouse State
 type MouseButtonState =
