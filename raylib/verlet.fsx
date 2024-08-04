@@ -61,8 +61,20 @@ module Circle =
         }
 
     let update circle (dt:float32) =
+        let acceleration = gravity
+
+        // This is the whole idea of Verlet. update Position with velocity
+        // than update velocity with some acceleration. I assume that usually
+        // someone than should only add/remove forces to acceleration and let
+        // the simulation run. In this simulation i only have gravity
+        // as a constant force.
         circle.Position <- circle.Position + (circle.Velocity * dt)
-        circle.Velocity <- vectorMax 1000f (circle.Velocity + (gravity * dt))
+        circle.Velocity <- circle.Velocity + (acceleration * dt)    |> vectorMax 1000f
+
+        // Adding some friction to the velocity so it becomes less over time
+        let friction    = 2f
+        let negVec      = -circle.Velocity * friction * dt
+        circle.Velocity <- circle.Velocity + negVec
 
     let draw circle =
         rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
@@ -102,7 +114,7 @@ module Circle =
         // Collision with Bottom Axis
         if pos.Y > (h - circle.Radius) then
             circle.Position <- vec2 pos.X (h - circle.Radius)
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f -1f) * 0.5f
+            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f -1f) * 0.2f
         // Collision with left Axis
         if pos.X < circle.Radius then
             circle.Position <- vec2 circle.Radius pos.Y
@@ -116,29 +128,59 @@ module Circle =
             circle.Position <- vec2 pos.X circle.Radius
             circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f 1f) * 0.5f
 
+
+
 // Circles to draw
 let mutable circles =
-    List.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
+    ResizeArray<_>(
+        Seq.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
+    )
 
 // Game Loop
 rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
 rl.SetTargetFPS(60)
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
-    let dt = rl.GetFrameTime()
+    let dt    = rl.GetFrameTime()
+    let mouse = getMouse()
 
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
     rl.DrawFPS(0,0)
+
+    if mouse.Left = Down then
+        let circle = {
+            Circle.randomCircle defaultSpeed with
+                Position = mouse.Position
+        }
+        circles.Add( circle )
+
     for circle in circles do
-        Circle.update circle dt
-        Circle.resolveCollision circle circles
-        Circle.resolveScreenBoundaryCollision circle
+        // a simulation with 60fps means every movement of every circle is updated
+        // every 1/60. A computer/game/program needs to calculate how much something
+        // moved in this time-frame. Adding substeps of 2 for example means that
+        // on each frame the update runs twice with half the frame-time. So
+        // even when game runs at 60 fps, its simulated as running at 120 fps.
+        // This way the simulation becomes better, collision detection works better
+        // with fast moving objects and so on. But it also costs much performance.
+        //
+        // Instead of running everything at multiple-times of fps someone could
+        // implemented continous collision detection for objects that need it
+        // while everything else just runs at fps or better a fixed update time.
+        let subSteps = 2f
+        let dt = dt / subSteps
+        for i=1 to int subSteps do
+            Circle.update circle dt
+            Circle.resolveCollision circle circles
+            Circle.resolveScreenBoundaryCollision circle
         Circle.draw   circle
 
+    rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
+
     if guiButton (rect 325f 10f 150f 30f) "New Circles" then
-        circles <- List.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
+        circles <- ResizeArray<_>( Seq.init circleAmount (fun i -> Circle.randomCircle defaultSpeed) )
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity
+
     rl.EndDrawing ()
 
 rl.CloseWindow()
