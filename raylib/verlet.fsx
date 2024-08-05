@@ -11,7 +11,6 @@ open System.Numerics
 
 // Some constants / Game state
 let screenWidth, screenHeight    = 1200, 800
-let defaultSpeed                 = 100f
 let circleAmount                 = 100
 let gravity                      = vec2 0f 1000f
 let circleMinSize, circleMaxSize = 5f, 15f
@@ -21,39 +20,26 @@ let mutable showVelocity         = false
 type rl = Raylib
 
 // Helper functions
-let isSame x y    = LanguagePrimitives.PhysicalEquality x y
-let rng           = System.Random ()
-let nextI min max = rng.Next(min,max)
-let nextF min max = min + (rng.NextSingle() * (max-min))
-
-let vectorMax max (vector:Vector2) =
-    let length = vector.Length ()
-    if length > max
-    then vector * (max / length)
-    else vector
+let isSame x y = LanguagePrimitives.PhysicalEquality x y
 
 // Data-structures
+[<NoComparison; NoEquality>]
 type Circle = {
     mutable OldPosition: Vector2
     mutable Position:    Vector2
-    Mass:   float32
     Radius: float32
     Color:  Color
 }
 
 module Circle =
-    let randomCircle (speed:float32) =
-        let radius = nextF circleMinSize circleMaxSize
-        let pos    = vec2 (nextF 0f (float32 screenWidth)) (nextF 0f (float32 screenHeight))
+    let randomCircle pos =
+        let radius = randF circleMinSize circleMaxSize
         {
             OldPosition  = pos
             Position     = pos
-            // Mass depends on object size, but could be different. For visualaization
-            // it makes sense to think a bigger object has more Mass.
-            Mass         = radius / 6f
             Radius       = radius
             Color        =
-                match nextI 0 5 with
+                match randI 0 5 with
                 | 0 -> Color.DarkBlue
                 | 1 -> Color.Orange
                 | 2 -> Color.Purple
@@ -62,10 +48,12 @@ module Circle =
         }
 
     let update circle (dt:float32) =
-        let acceleration = gravity / circle.Mass
-        let velocity     = circle.Position - circle.OldPosition
+        // Long way:
+        // let velocity = circle.Position - circle.OldPosition
+        // let newPos   = circle.Position + velocity + (gravity * dt * dt)
+        let newPosition     = 2f * circle.Position - circle.OldPosition + (gravity * dt * dt)
         circle.OldPosition <- circle.Position
-        circle.Position    <- circle.Position + velocity + (acceleration * dt * dt)
+        circle.Position    <- newPosition
 
     let draw circle =
         rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
@@ -91,7 +79,7 @@ module Circle =
                 else
                     let toOther     = toOther / distance // normalize vector
                     let overlap     = neededDistance - distance
-                    let halfOverlap = toOther * overlap * 0.5f
+                    let halfOverlap = 0.5f * overlap * toOther
                     circle.Position <- circle.Position - halfOverlap
                     other.Position  <- other.Position  + halfOverlap
 
@@ -103,21 +91,21 @@ module Circle =
             circle.Position    <- vec2 circle.Position.X (h - circle.Radius)
         // Collision with left Axis
         if circle.Position.X < circle.Radius then
-            circle.OldPosition <- circle.Position
+            // circle.OldPosition <- circle.Position
             circle.Position    <- vec2 circle.Radius circle.Position.Y
         // Collision with Right Axis
         if circle.Position.X > (w - circle.Radius) then
-            circle.OldPosition <- circle.Position
+            // circle.OldPosition <- circle.Position
             circle.Position    <- vec2 (w - circle.Radius) circle.Position.Y
         // Collision with Up Axis
         if circle.Position.Y < circle.Radius then
-            circle.OldPosition <- circle.Position
+            // circle.OldPosition <- circle.Position
             circle.Position    <- vec2 circle.Position.X circle.Radius
 
 // Circles to draw
 let mutable circles =
     ResizeArray<_>(
-        Seq.init circleAmount (fun i -> Circle.randomCircle defaultSpeed)
+        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f)))
     )
 
 // Game Loop
@@ -133,11 +121,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.DrawFPS(0,0)
 
     if mouse.Left = Down then
-        circles.Add({
-            Circle.randomCircle defaultSpeed with
-                OldPosition = mouse.Position
-                Position    = mouse.Position
-        })
+        circles.Add(Circle.randomCircle mouse.Position)
 
     for circle in circles do
         // a simulation with 60fps means every movement of every circle is updated
@@ -162,7 +146,9 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
 
     if guiButton (rect 325f 10f 150f 30f) "New Circles" then
-        circles <- ResizeArray<_>( Seq.init circleAmount (fun i -> Circle.randomCircle defaultSpeed) )
+        circles <- ResizeArray<_>( Seq.init circleAmount (fun i ->
+            Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f))
+        ))
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity
 
