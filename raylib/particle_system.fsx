@@ -94,14 +94,14 @@ rl.InitWindow(screenWidth, screenHeight, "Hello, World!")
 // Genereates a Texture Atlas in Memory. This emulates later behaviour and
 // performance better than calling DrawCircle() and DrawRectangle()
 let sprites =
-    let atlas = rl.LoadRenderTexture(20, 10)
+    let atlas = rl.LoadRenderTexture(21, 12)
     rl.BeginTextureMode(atlas)
     rl.DrawRectangle(0, 0, 10, 10, Color.DarkBlue)
-    rl.DrawCircle(17, 5, 5f, Color.Yellow)
+    rl.DrawCircle(15, 5, 4f, Color.Yellow)
     rl.EndTextureMode()
     [|
-        { Texture = atlas.Texture; Source = rect  0f 0f 10f 10f }
-        { Texture = atlas.Texture; Source = rect 10f 0f 10f 10f }
+        { Texture = atlas.Texture; Source = rect  0f 0f 10f 10f } // Rect
+        { Texture = atlas.Texture; Source = rect 10f 0f 11f 11f } // Circle
     |]
 
 // rl.SetTargetFPS(60)
@@ -116,7 +116,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     Particles.updateParticles dt
 
     // Initialize x Particles each frame
-    for i=0 to 200 do
+    for i=0 to 100 do
         let sprite = if rng.NextSingle () < 0.5f then sprites.[0] else sprites.[1]
         Particles.initParticle (fun p ->
             p.Sprite      <- sprite
