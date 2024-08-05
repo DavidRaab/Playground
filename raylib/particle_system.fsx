@@ -53,7 +53,7 @@ module Particles =
     /// Initialize a new particle. Every field should be explicitly set. No
     /// cleanup or reset is done.
     let initParticle f =
-        if activeParticles < maxParticles-1 then
+        if activeParticles < maxParticles then
             f particles.[activeParticles]
             activeParticles <- activeParticles + 1
 
@@ -78,14 +78,14 @@ module Particles =
                     // Update particle
                     let p = particles.[idx]
                     p.ElapsedTime <- p.ElapsedTime + dt
-                    p.Position    <- p.Position + (p.Velocity * dt)
-                    p.Rotation    <- p.Rotation + (p.Torque * dt)
 
                     // when particle lifetime is reached, we swap with last element.
                     // But then we need to recheck current idx again.
                     if p.ElapsedTime >= p.LifeTime then
                         deactivateParticle idx
                     else
+                        p.Position <- p.Position + (p.Velocity * dt)
+                        p.Rotation <- p.Rotation + (p.Torque * dt)
                         idx <- idx + 1
 
 
@@ -116,7 +116,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     Particles.updateParticles dt
 
     // Initialize x Particles each frame
-    for i=0 to 100 do
+    for i=0 to 250 do
         let sprite = if rng.NextSingle () < 0.5f then sprites.[0] else sprites.[1]
         Particles.initParticle (fun p ->
             p.Sprite      <- sprite
@@ -135,7 +135,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         )
     )
 
-    Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles+1), 1000, 10, 24, Color.Yellow)
+    Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles), 1000, 10, 24, Color.Yellow)
     rl.EndDrawing ()
 
 rl.CloseWindow()
