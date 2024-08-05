@@ -132,16 +132,16 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     // Instead of running everything at multiple-times of fps someone could
     // implemented continous collision detection for objects that need it
     // while everything else just runs at fps or better a fixed update time.
-    let subSteps = 2f
-    let dt       = dt / subSteps
-    for i=1 to int subSteps do
-        for circle in circles do
-            Circle.update circle dt
-            Circle.resolveScreenBoundaryCollision circle
-            Circle.resolveCollision circle circles
-
+    // let subSteps = 2f
+    // let dt       = dt / subSteps
+    // for i=1 to int subSteps do
     for circle in circles do
+        Circle.resolveScreenBoundaryCollision circle
+        Circle.resolveCollision circle circles
+        Circle.update circle dt
         Circle.draw circle
+
+    // for circle in circles do
 
     rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
 
