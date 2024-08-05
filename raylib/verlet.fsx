@@ -13,70 +13,19 @@ open System.Numerics
 let screenWidth, screenHeight    = 1200, 800
 let circleAmount                 = 200
 let circleMinSize, circleMaxSize = 10f, 20f
+let gravity                      = vec2 0f 1000f
 let mutable showVelocity         = false
-
-[<Struct>]
-type Vec2 = {
-    X: float
-    Y: float
-}
-
-module Vec2 =
-    let create x y = { X = x; Y = y }
-
-    let add a b = {
-        X = a.X + b.X
-        Y = a.Y + b.Y
-    }
-
-    let sub a b = {
-        X = a.X - b.X
-        Y = a.Y - b.Y
-    }
-
-    let multiply a scalar = {
-        X = a.X * scalar
-        Y = a.Y * scalar
-    }
-
-    let length a =
-        sqrt(a.X * a.X + a.Y * a.Y)
-
-    let divide a scalar = {
-        X = a.X / scalar
-        Y = a.Y / scalar
-    }
-
-    let normalize a =
-        divide a (length a)
-
-    let f32 a =
-        Vector2(float32 a.X, float32 a.Y)
-
-    let fromF32 (v:Vector2) =
-        create (float v.X) (float v.Y)
-
-type Vec2 with
-    static member (-) (a:Vec2, b:Vec2) =
-        Vec2.sub a b
-    static member (+) (a:Vec2, b:Vec2) =
-        Vec2.add a b
-    static member (*) (a:Vec2, scalar:float) =
-        Vec2.multiply a scalar
-    static member (/) (a:Vec2, scalar:float) =
-        Vec2.divide a scalar
 
 // Class Alias
 type rl        = Raylib
 let isSame x y = LanguagePrimitives.PhysicalEquality x y
-let gravity    = Vec2.create 0.0 1000.0
 
 // Data-structures
 [<NoComparison; NoEquality>]
 type Circle = {
-    mutable OldPosition: Vec2
-    mutable Position:    Vec2
-    Radius: float
+    mutable OldPosition: Vector2
+    mutable Position:    Vector2
+    Radius: float32
     Color:  Color
 }
 
@@ -84,7 +33,7 @@ module Circle =
     let randomCircle pos = {
         OldPosition = pos
         Position    = pos
-        Radius      = float (randF circleMinSize circleMaxSize)
+        Radius      = (randF circleMinSize circleMaxSize)
         Color       =
             match randI 0 5 with
             | 0 -> Color.DarkBlue
@@ -94,9 +43,9 @@ module Circle =
             | 4 -> Color.DarkGreen
     }
 
-    let inline update circle (dt:float) =
+    let inline update circle (dt:float32) =
         // Long way:
-        let velocity = Vec2.sub circle.Position circle.OldPosition
+        let velocity = circle.Position - circle.OldPosition
         circle.OldPosition <- circle.Position
         circle.Position    <- circle.Position + velocity + (gravity * dt * dt)
         // let newPosition     = 2f * circle.Position - circle.OldPosition + (gravity * dt * dt)
@@ -118,40 +67,40 @@ module Circle =
                 ()
             else
                 let toOther        = other.Position - circle.Position
-                let distance       = Vec2.length toOther
+                let distance       = toOther.Length ()
                 let neededDistance = circle.Radius + other.Radius
                 if distance > neededDistance then
                     ()
                 else
                     let toOther     = toOther / distance // normalize vector
                     let overlap     = neededDistance - distance
-                    let halfOverlap = toOther * 0.5 * overlap
+                    let halfOverlap = toOther * 0.5f * overlap
                     circle.Position <- circle.Position - halfOverlap
                     other.Position  <- other.Position  + halfOverlap
 
     let w, h = float32 screenWidth, float32 screenHeight
     let resolveScreenBoundaryCollision circle =
         // Collision with Bottom Axis
-        if circle.Position.Y > (float h - circle.Radius) then
+        if circle.Position.Y > (h - circle.Radius) then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- Vec2.create circle.Position.X (float h - circle.Radius)
+            circle.Position    <- vec2 circle.Position.X (h - circle.Radius)
         // Collision with left Axis
         if circle.Position.X < circle.Radius then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- Vec2.create circle.Radius circle.Position.Y
+            circle.Position    <- vec2 circle.Radius circle.Position.Y
         // Collision with Right Axis
-        if circle.Position.X > (float w - circle.Radius) then
+        if circle.Position.X > (w - circle.Radius) then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- Vec2.create (float w - circle.Radius) circle.Position.Y
+            circle.Position    <- vec2 (w - circle.Radius) circle.Position.Y
         // Collision with Up Axis
         if circle.Position.Y < circle.Radius then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- Vec2.create circle.Position.X circle.Radius
+            circle.Position    <- vec2 circle.Position.X circle.Radius
 
 // Circles to draw
 let mutable circles =
     ResizeArray<_>(
-        Seq.init circleAmount (fun i -> Circle.randomCircle (Vec2.create (rand 0 1200) (rand 0 800)))
+        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f)))
     )
 
 // Game Loop
@@ -159,7 +108,7 @@ rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
 rl.SetTargetFPS(60)
 
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
-    let dt    = float <| rl.GetFrameTime()
+    let dt    = rl.GetFrameTime()
     let mouse = getMouse()
 
     rl.BeginDrawing ()
@@ -167,10 +116,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Spawn circles
     if mouse.Left = Down then
-        circles.Add(Circle.randomCircle (Vec2.fromF32 mouse.Position))
+        circles.Add(Circle.randomCircle mouse.Position)
 
     // Update Circles
-    let subSteps = 4.0
+    let subSteps = 4.0f
     let dt       = dt / subSteps
     for i=1 to int subSteps do
         for circle in circles do
@@ -186,7 +135,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
     if guiButton (rect 325f 10f 150f 30f) "New Circles" then
         circles <- ResizeArray<_>( Seq.init circleAmount (fun i ->
-            Circle.randomCircle (Vec2.create (rand 0 1200) (rand 0 800))
+            Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f))
         ))
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity
