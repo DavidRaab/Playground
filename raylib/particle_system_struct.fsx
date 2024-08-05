@@ -36,7 +36,7 @@ type Emiter = {
 }
 
 module Particles =
-    let maxParticles            = 50_000
+    let maxParticles            = 100_000
     let mutable activeParticles = 0
     let particles = Array.init maxParticles (fun i -> {
         Sprite      = Unchecked.defaultof<Sprite>
@@ -128,7 +128,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             p.[idx].Sprite      <- sprite
             p.[idx].Position    <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.[idx].ElapsedTime <- 0f
-            p.[idx].LifeTime    <- nextF 0.25f 5f
+            p.[idx].LifeTime    <- nextF 10f 20f
             p.[idx].Rotation    <- 0f
             p.[idx].Torque      <- nextF -45f 45f
             p.[idx].Velocity    <- (vec2 (nextF -1f 1f) (nextF -1f 1f)) * 200f
@@ -147,7 +147,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         )
     )
 
-    Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles+1), 1000, 10, 24, Color.Yellow)
+    Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles), 1000, 10, 24, Color.Yellow)
     rl.EndDrawing ()
 
 rl.CloseWindow()

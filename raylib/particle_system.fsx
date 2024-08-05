@@ -32,7 +32,7 @@ type Emiter = {
 }
 
 module Particles =
-    let maxParticles = 50_000
+    let maxParticles = 100_000
     let mutable activeParticles = 0
     let particles = Array.init maxParticles (fun i -> {
         Sprite      = Unchecked.defaultof<Sprite>
@@ -122,7 +122,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             p.Sprite      <- sprite
             p.Position    <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.ElapsedTime <- 0f
-            p.LifeTime    <- nextF 0.25f 5f
+            p.LifeTime    <- nextF 10f 20f
             p.Rotation    <- 0f
             p.Torque      <- nextF -45f 45f
             p.Velocity    <- (vec2 (nextF -1f 1f) (nextF -1f 1f)) * 200f
