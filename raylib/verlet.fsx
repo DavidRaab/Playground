@@ -45,7 +45,7 @@ module Circle =
             | 4 -> Color.DarkGreen
     }
 
-    let update circle (dt:float32) =
+    let inline update circle (dt:float32) =
         // Long way:
         // let velocity = circle.Position - circle.OldPosition
         // let newPos   = circle.Position + velocity + (gravity * dt * dt)
@@ -120,7 +120,6 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     if mouse.Left = Down then
         circles.Add(Circle.randomCircle mouse.Position)
-
 
     // a simulation with 60fps means every movement of every circle is updated
     // every 1/60. A computer/game/program needs to calculate how much something
