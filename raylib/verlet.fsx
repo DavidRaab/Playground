@@ -11,9 +11,9 @@ open System.Numerics
 
 // Some constants / Game state
 let screenWidth, screenHeight    = 1200, 800
-let circleAmount                 = 100
+let circleAmount                 = 200
 let gravity                      = vec2 0f 1000f
-let circleMinSize, circleMaxSize = 5f, 15f
+let circleMinSize, circleMaxSize = 5f, 10f
 let mutable showVelocity         = false
 
 // Class Alias
@@ -32,20 +32,18 @@ type Circle = {
 }
 
 module Circle =
-    let randomCircle pos =
-        let radius = randF circleMinSize circleMaxSize
-        {
-            OldPosition  = pos
-            Position     = pos
-            Radius       = radius
-            Color        =
-                match randI 0 5 with
-                | 0 -> Color.DarkBlue
-                | 1 -> Color.Orange
-                | 2 -> Color.Purple
-                | 3 -> Color.SkyBlue
-                | 4 -> Color.DarkGreen
-        }
+    let randomCircle pos = {
+        OldPosition  = pos
+        Position     = pos
+        Radius       = randF circleMinSize circleMaxSize
+        Color        =
+            match randI 0 5 with
+            | 0 -> Color.DarkBlue
+            | 1 -> Color.Orange
+            | 2 -> Color.Purple
+            | 3 -> Color.SkyBlue
+            | 4 -> Color.DarkGreen
+    }
 
     let update circle (dt:float32) =
         // Long way:
@@ -87,7 +85,7 @@ module Circle =
     let resolveScreenBoundaryCollision circle =
         // Collision with Bottom Axis
         if circle.Position.Y > (h - circle.Radius) then
-            circle.OldPosition <- circle.Position
+            // circle.OldPosition <- circle.Position
             circle.Position    <- vec2 circle.Position.X (h - circle.Radius)
         // Collision with left Axis
         if circle.Position.X < circle.Radius then
@@ -123,25 +121,28 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     if mouse.Left = Down then
         circles.Add(Circle.randomCircle mouse.Position)
 
-    for circle in circles do
-        // a simulation with 60fps means every movement of every circle is updated
-        // every 1/60. A computer/game/program needs to calculate how much something
-        // moved in this time-frame. Adding substeps of 2 for example means that
-        // on each frame the update runs twice with half the frame-time. So
-        // even when game runs at 60 fps, its simulated as running at 120 fps.
-        // This way the simulation becomes better, collision detection works better
-        // with fast moving objects and so on. But it also costs much performance.
-        //
-        // Instead of running everything at multiple-times of fps someone could
-        // implemented continous collision detection for objects that need it
-        // while everything else just runs at fps or better a fixed update time.
-        let subSteps = 2f
-        let dt = dt / subSteps
-        for i=1 to int subSteps do
+
+    // a simulation with 60fps means every movement of every circle is updated
+    // every 1/60. A computer/game/program needs to calculate how much something
+    // moved in this time-frame. Adding substeps of 2 for example means that
+    // on each frame the update runs twice with half the frame-time. So
+    // even when game runs at 60 fps, its simulated as running at 120 fps.
+    // This way the simulation becomes better, collision detection works better
+    // with fast moving objects and so on. But it also costs much performance.
+    //
+    // Instead of running everything at multiple-times of fps someone could
+    // implemented continous collision detection for objects that need it
+    // while everything else just runs at fps or better a fixed update time.
+    let subSteps = 2f
+    let dt       = dt / subSteps
+    for i=1 to int subSteps do
+        for circle in circles do
             Circle.update circle dt
-            Circle.resolveCollision circle circles
             Circle.resolveScreenBoundaryCollision circle
-        Circle.draw   circle
+            Circle.resolveCollision circle circles
+
+    for circle in circles do
+        Circle.draw circle
 
     rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
 
