@@ -7,18 +7,18 @@ open System.Numerics
 
 let screenWidth, screenHeight = 1200, 800
 
-// Usually a Texture in not demo purpose
-type Sprite =
-    | Rect
-    | Circle
+type Sprite = {
+    Texture: Texture2D
+    Source:  Rectangle
+}
 
 // A single particle is usually spawned by an emiter. It lifes for some
 // time and during lifetime applies some movement, rotation to it.
 type Particle = {
+    mutable Sprite:      Sprite
     mutable Position:    Vector2
     mutable Rotation:    float32
     mutable ElapsedTime: float32
-    mutable Sprite:      Sprite
     mutable Velocity:    Vector2
     mutable Torque:      float32
     mutable LifeTime:    float32
@@ -29,17 +29,16 @@ type Emiter = {
     Position:  Vector2
     Direction: Vector2
     FOV:       float32 // Degree
-    // Particles: Particle array
 }
 
 module Particles =
-    let maxParticles = 20_000
+    let maxParticles = 50_000
     let mutable activeParticles = 0
     let particles = Array.init maxParticles (fun i -> {
+        Sprite      = Unchecked.defaultof<Sprite>
         Position    = vec2 0f 0f
         Rotation    = 0f
         ElapsedTime = 0f
-        Sprite      = Rect
         Velocity    = vec2 0f 0f
         Torque      = 0f
         LifeTime    = 1f
@@ -48,15 +47,15 @@ module Particles =
     // Only iterates through the active particles
     let inline iter ([<InlineIfLambda>] f) =
         if activeParticles > 0 then
-            for idx=0 to activeParticles do
+            for idx=0 to activeParticles-1 do
                 f particles.[idx]
 
     /// Initialize a new particle. Every field should be explicitly set. No
     /// cleanup or reset is done.
     let initParticle f =
         if activeParticles < maxParticles-1 then
-            activeParticles <- activeParticles + 1
             f particles.[activeParticles]
+            activeParticles <- activeParticles + 1
 
     let inline swap x y =
         let tmp = particles.[x]
@@ -65,7 +64,7 @@ module Particles =
 
     /// Deactivates a particle. Usually called when its ElapsedTime reached its lifetime
     let deactivateParticle idx =
-        swap idx activeParticles
+        swap idx (activeParticles-1)
         activeParticles <- activeParticles - 1
 
     let updateParticles (dt:float32) =
@@ -90,9 +89,21 @@ module Particles =
                         idx <- idx + 1
 
 
-
-
 rl.InitWindow(screenWidth, screenHeight, "Hello, World!")
+
+// Genereates a Texture Atlas in Memory. This emulates later behaviour and
+// performance better than calling DrawCircle() and DrawRectangle()
+let sprites =
+    let atlas = rl.LoadRenderTexture(20, 10)
+    rl.BeginTextureMode(atlas)
+    rl.DrawRectangle(0, 0, 10, 10, Color.DarkBlue)
+    rl.DrawCircle(17, 5, 5f, Color.Yellow)
+    rl.EndTextureMode()
+    [|
+        { Texture = atlas.Texture; Source = rect  0f 0f 10f 10f }
+        { Texture = atlas.Texture; Source = rect 10f 0f 10f 10f }
+    |]
+
 // rl.SetTargetFPS(60)
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt = rl.GetFrameTime()
@@ -103,12 +114,12 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Initialize x Particles each frame
     for i=0 to 100 do
-        let sprite   = if rng.NextSingle () < 0.5f then Rect else Circle
+        let sprite = if rng.NextSingle () < 0.5f then sprites.[0] else sprites.[1]
         Particles.initParticle (fun p ->
-            p.Position    <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.Sprite      <- sprite
+            p.Position    <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.ElapsedTime <- 0f
-            p.LifeTime    <- nextF 0.5f 2f
+            p.LifeTime    <- nextF 0.5f 3f
             p.Rotation    <- 0f
             p.Torque      <- nextF -45f 45f
             p.Velocity    <- (vec2 (nextF -1f 1f) (nextF -1f 1f)) * 200f
@@ -119,19 +130,9 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Draw particles
     Particles.iter (fun p ->
-        match p.Sprite with
-        | Rect ->
-            rl.DrawRectangle(
-                int p.Position.X, int p.Position.Y, 5, 5, Color.DarkBlue
-            )
-            // rl.DrawRectanglePro(
-            //     (rect p.Position.X p.Position.Y 10f 10f),
-            //     (vec2 (p.Position.X + 5f) (p.Position.Y + 5f)),
-            //     p.Rotation,
-            //     Color.DarkBlue
-            // )
-        | Circle ->
-            rl.DrawCircle(int p.Position.X, int p.Position.Y, 3f, Color.Yellow)
+        rl.DrawTexturePro(
+            p.Sprite.Texture, p.Sprite.Source, (rect p.Position.X p.Position.Y 10f 10f), Vector2.Zero, p.Rotation, Color.White
+        )
     )
 
     Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles), 1000, 10, 24, Color.Yellow)

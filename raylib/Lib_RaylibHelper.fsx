@@ -17,6 +17,14 @@ let rng                 = System.Random ()
 let nextI min max       = rng.Next(min,max)
 let nextF min max       = min + (rng.NextSingle() * (max-min))
 
+let color r g b a =
+    let mutable c = Color()
+    c.R <- r
+    c.G <- g
+    c.B <- b
+    c.A <- a
+    c
+
 // A nicer way to get Mouse State
 type MouseButtonState =
     | Up
