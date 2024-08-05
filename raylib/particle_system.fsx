@@ -63,7 +63,7 @@ module Particles =
         particles.[y] <- tmp
 
     /// Deactivates a particle. Usually called when its ElapsedTime reached its lifetime
-    let deactivateParticle idx =
+    let inline deactivateParticle idx =
         swap idx (activeParticles-1)
         activeParticles <- activeParticles - 1
 
@@ -116,7 +116,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     Particles.updateParticles dt
 
     // Initialize x Particles each frame
-    for i=0 to 250 do
+    for i=0 to 100 do
         let sprite = if rng.NextSingle () < 0.5f then sprites.[0] else sprites.[1]
         Particles.initParticle (fun p ->
             p.Sprite      <- sprite
