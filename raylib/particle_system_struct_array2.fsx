@@ -5,8 +5,9 @@ open Raylib_cs
 open Lib_RaylibHelper
 open System.Numerics
 
-// This is a modification of particle_system.fsx
-// It uses a struct for particle instead of a reference-type
+// This is a modification of particle_system_struct.fsx.
+// It uses two arrays to updated and push particles into new array
+// and swaps them after finishing all operations
 
 let screenWidth, screenHeight = 1200, 800
 
@@ -38,7 +39,21 @@ type Emiter = {
 module Particles =
     let maxParticles            = 50_000
     let mutable activeParticles = 0
-    let particles = Array.init maxParticles (fun i -> {
+
+    // The idea is to use two arrays instead of just one. While iterating
+    // through one array and updating the particles the previous one is
+    // populated with only the active elements. This is only useful when
+    // using structs.
+    let mutable previous = Array.init maxParticles (fun i -> {
+        Sprite      = Unchecked.defaultof<Sprite>
+        Position    = vec2 0f 0f
+        Rotation    = 0f
+        ElapsedTime = 0f
+        Velocity    = vec2 0f 0f
+        Torque      = 0f
+        LifeTime    = 1f
+    })
+    let mutable current = Array.init maxParticles (fun i -> {
         Sprite      = Unchecked.defaultof<Sprite>
         Position    = vec2 0f 0f
         Rotation    = 0f
@@ -61,38 +76,31 @@ module Particles =
             f activeParticles
             activeParticles <- activeParticles + 1
 
-    let inline swap x y =
-        let tmp = particles.[x]
-        particles.[x] <- particles.[y]
-        particles.[y] <- tmp
-
-    /// Deactivates a particle. Usually called when its ElapsedTime reached its lifetime
-    let inline deactivateParticle idx =
-        swap idx (activeParticles-1)
-        activeParticles <- activeParticles - 1
-
     let updateParticles (dt:float32) =
-        if activeParticles > 0 then
-            let mutable idx     = 0
-            let mutable running = true
-            while running do
-                if idx >= activeParticles then
-                    running <- false
-                else
-                    // Update particle
-                    let p = particles
-                    p.[idx].ElapsedTime <- p.[idx].ElapsedTime + dt
+        let mutable newActive = 0
 
-                    // when particle lifetime is reached, we swap with last element.
-                    // But then we need to recheck current idx again.
-                    if p.[idx].ElapsedTime >= p.[idx].LifeTime then
-                        p.[idx] <- p.[activeParticles-1]
-                        activeParticles <- activeParticles - 1
-                    else
-                        p.[idx].Position <- p.[idx].Position + (p.[idx].Velocity * dt)
-                        p.[idx].Rotation <- p.[idx].Rotation + (p.[idx].Torque * dt)
-                        idx <- idx + 1
+        // go through current and update every particle. When its ElapsedTime
+        // for idx=0 to activeParticles-1 do
+        System.Threading.Tasks.Parallel.For(0, activeParticles, (fun idx _ ->
+            current.[idx].ElapsedTime <- current.[idx].ElapsedTime + dt
+            current.[idx].Position    <- current.[idx].Position + (current.[idx].Velocity * dt)
+            current.[idx].Rotation    <- current.[idx].Rotation + (current.[idx].Torque * dt)
+        ))
+        |> ignore
 
+        // push into previous when active
+        for idx=0 to activeParticles-1 do
+            if current.[idx].ElapsedTime < current.[idx].LifeTime then
+                previous.[newActive] <- current.[idx]
+                newActive <- newActive + 1
+
+        // swap current and previous
+        let tmp = current
+        current  <- previous
+        previous <- tmp
+
+        // update new active element
+        activeParticles <- newActive
 
 rl.InitWindow(screenWidth, screenHeight, "Hello, World!")
 
@@ -124,7 +132,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     for i=0 to 100 do
         let sprite = if rng.NextSingle () < 0.5f then sprites.[0] else sprites.[1]
         Particles.initParticle (fun idx ->
-            let p = Particles.particles
+            let p = Particles.current
             p.[idx].Sprite      <- sprite
             p.[idx].Position    <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.[idx].ElapsedTime <- 0f
@@ -136,7 +144,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Draw particles
     Particles.iter (fun idx ->
-        let p = Particles.particles
+        let p = Particles.current
         rl.DrawTexturePro(
             p.[idx].Sprite.Texture,
             p.[idx].Sprite.Source,
