@@ -72,7 +72,7 @@ module Particles =
             let mutable idx     = 0
             let mutable running = true
             while running do
-                if idx >= activeParticles || idx >= maxParticles then
+                if idx >= activeParticles then
                     running <- false
                 else
                     // Update particle
@@ -112,8 +112,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
+    // Update particles
+    Particles.updateParticles dt
+
     // Initialize x Particles each frame
-    for i=0 to 100 do
+    for i=0 to 200 do
         let sprite = if rng.NextSingle () < 0.5f then sprites.[0] else sprites.[1]
         Particles.initParticle (fun p ->
             p.Sprite      <- sprite
@@ -125,9 +128,6 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             p.Velocity    <- (vec2 (nextF -1f 1f) (nextF -1f 1f)) * 200f
         )
 
-    // Update particles
-    Particles.updateParticles dt
-
     // Draw particles
     Particles.iter (fun p ->
         rl.DrawTexturePro(
@@ -135,7 +135,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         )
     )
 
-    Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles), 1000, 10, 24, Color.Yellow)
+    Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles+1), 1000, 10, 24, Color.Yellow)
     rl.EndDrawing ()
 
 rl.CloseWindow()
