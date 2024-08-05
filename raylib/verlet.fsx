@@ -13,7 +13,7 @@ open System.Numerics
 let screenWidth, screenHeight    = 1200, 800
 let defaultSpeed                 = 100f
 let circleAmount                 = 100
-let gravity                      = vec2 0f 500f
+let gravity                      = vec2 0f 250f
 let circleMinSize, circleMaxSize = 5f, 15f
 let mutable showVelocity         = false
 
@@ -34,8 +34,8 @@ let vectorMax max (vector:Vector2) =
 
 // Data-structures
 type Circle = {
-    mutable Position: Vector2
-    mutable Velocity: Vector2
+    mutable OldPosition: Vector2
+    mutable Position:    Vector2
     Mass:   float32
     Radius: float32
     Color:  Color
@@ -44,9 +44,10 @@ type Circle = {
 module Circle =
     let randomCircle (speed:float32) =
         let radius = nextF circleMinSize circleMaxSize
+        let pos    = vec2 (nextF 0f (float32 screenWidth)) (nextF 0f (float32 screenHeight))
         {
-            Position     = vec2 (nextF 0f (float32 screenWidth)) (nextF 0f (float32 screenHeight))
-            Velocity     = (vec2 (nextF -1f 1f) (nextF -1f 1f)) * speed
+            OldPosition  = pos
+            Position     = pos
             // Mass depends on object size, but could be different. For visualaization
             // it makes sense to think a bigger object has more Mass.
             Mass         = radius
@@ -66,21 +67,25 @@ module Circle =
         // Okay this is still Euler Method and not Verlet. Looking further into it.
         // But one important aspect is to update Velocity first before upting the
         // Position. Updating Velocity first has its own name "Semi-implicit Euler Method"
-        circle.Velocity <- circle.Velocity + (acceleration * dt)    |> vectorMax 1000f
-        circle.Position <- circle.Position + (circle.Velocity * dt)
+        let velocity = circle.Position - circle.OldPosition
+        let newPos   = circle.Position + velocity + (acceleration * dt * dt)
+
+        circle.OldPosition <- circle.Position
+        circle.Position    <- newPos
 
         // Adding some friction to the velocity so it becomes less over time
-        let friction    = 2f
-        let negVec      = -circle.Velocity * friction * dt
-        circle.Velocity <- circle.Velocity + negVec
+        // let friction    = 2f
+        // let negVec      = -circle.Velocity * friction * dt
+        // circle.Velocity <- circle.Velocity + negVec
 
     let draw circle =
         rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
         if showVelocity then
+            let velocity = circle.Position - circle.OldPosition
             rl.DrawLine (
                 int circle.Position.X, int circle.Position.Y,
-                int (circle.Position.X + circle.Velocity.X),
-                int (circle.Position.Y + circle.Velocity.Y),
+                int (circle.Position.X + velocity.X),
+                int (circle.Position.Y + velocity.Y),
                 Color.RayWhite
             )
 
@@ -95,15 +100,15 @@ module Circle =
                 if distance >= neededDistance then
                     ()
                 else
-                    let relSpeed    = circle.Velocity.Length () - other.Velocity.Length ()
+                    // let relSpeed    = circle.Velocity.Length () - other.Velocity.Length ()
                     let toOther     = toOther / distance // normalize vector
                     let overlap     = (neededDistance - distance)
                     let halfOverlap = (toOther * overlap) / 2f
                     let mass        = circle.Mass + other.Mass
                     circle.Position <- circle.Position - halfOverlap
-                    circle.Velocity <- -toOther * ((2f * other.Mass / mass) * relSpeed)
+                    // circle.Velocity <- -toOther * ((2f * other.Mass / mass) * relSpeed)
                     other.Position  <- other.Position + halfOverlap
-                    other.Velocity  <-  toOther * ((2f * circle.Mass / mass) * relSpeed)
+                    // other.Velocity  <-  toOther * ((2f * circle.Mass / mass) * relSpeed)
 
     let resolveScreenBoundaryCollision circle =
         let w = float32 screenWidth
@@ -112,19 +117,19 @@ module Circle =
         // Collision with Bottom Axis
         if pos.Y > (h - circle.Radius) then
             circle.Position <- vec2 pos.X (h - circle.Radius)
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f -1f) * 0.2f
+            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f -1f) * 0.2f
         // Collision with left Axis
         if pos.X < circle.Radius then
             circle.Position <- vec2 circle.Radius pos.Y
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 1f 0f) * 0.5f
+            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 1f 0f) * 0.5f
         // Collision with Right Axis
         if pos.X > (w - circle.Radius) then
             circle.Position <- vec2 (w - circle.Radius) pos.Y
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 -1f 0f) * 0.5f
+            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 -1f 0f) * 0.5f
         // Collision with Up Axis
         if pos.Y < circle.Radius then
             circle.Position <- vec2 pos.X circle.Radius
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f 1f) * 0.5f
+            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f 1f) * 0.5f
 
 
 
@@ -164,7 +169,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         // Instead of running everything at multiple-times of fps someone could
         // implemented continous collision detection for objects that need it
         // while everything else just runs at fps or better a fixed update time.
-        let subSteps = 2f
+        let subSteps = 1f
         let dt = dt / subSteps
         for i=1 to int subSteps do
             Circle.update circle dt
