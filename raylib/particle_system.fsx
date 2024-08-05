@@ -7,6 +7,10 @@ open System.Numerics
 
 let screenWidth, screenHeight = 1200, 800
 
+// This shows only 1000 of the particles. Activating is for benchmarking the
+// underlying particle system and its performance.
+let showOnly1000 = false
+
 type Sprite = {
     Texture: Texture2D
     Source:  Rectangle
@@ -129,11 +133,18 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         )
 
     // Draw particles
-    Particles.iter (fun p ->
-        rl.DrawTexturePro(
-            p.Sprite.Texture, p.Sprite.Source, (rect p.Position.X p.Position.Y 10f 10f), Vector2.Zero, p.Rotation, Color.White
+    if showOnly1000 then
+        for idx=0 to (min 1000 (Particles.activeParticles-1)) do
+            let p = Particles.particles.[idx]
+            rl.DrawTexturePro(
+                p.Sprite.Texture, p.Sprite.Source, (rect p.Position.X p.Position.Y 10f 10f), Vector2.Zero, p.Rotation, Color.White
+            )
+    else
+        Particles.iter (fun p ->
+            rl.DrawTexturePro(
+                p.Sprite.Texture, p.Sprite.Source, (rect p.Position.X p.Position.Y 10f 10f), Vector2.Zero, p.Rotation, Color.White
+            )
         )
-    )
 
     Raylib.DrawText(System.String.Format("Particles {0}", Particles.activeParticles), 1000, 10, 24, Color.Yellow)
     rl.EndDrawing ()
