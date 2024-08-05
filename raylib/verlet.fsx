@@ -63,13 +63,11 @@ module Circle =
     let update circle (dt:float32) =
         let acceleration = gravity
 
-        // This is the whole idea of Verlet. update Position with velocity
-        // than update velocity with some acceleration. I assume that usually
-        // someone than should only add/remove forces to acceleration and let
-        // the simulation run. In this simulation i only have gravity
-        // as a constant force.
-        circle.Position <- circle.Position + (circle.Velocity * dt)
+        // Okay this is still Euler Method and not Verlet. Looking further into it.
+        // But one important aspect is to update Velocity first before upting the
+        // Position. Updating Velocity first has its own name "Semi-implicit Euler Method"
         circle.Velocity <- circle.Velocity + (acceleration * dt)    |> vectorMax 1000f
+        circle.Position <- circle.Position + (circle.Velocity * dt)
 
         // Adding some friction to the velocity so it becomes less over time
         let friction    = 2f

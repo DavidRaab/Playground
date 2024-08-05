@@ -1,4 +1,4 @@
-#!/usr/bin/env -S dotnet fsi
+#!/usr/bin/env -S dotnet fsi -O
 #r "nuget:Raylib-cs"
 #load "Lib_RaylibHelper.fsx"
 open Raylib_cs
@@ -93,8 +93,8 @@ module Particles =
                     if p.ElapsedTime >= p.LifeTime then
                         deactivateParticle idx
                     else
-                        p.Position <- p.Position + (p.Velocity * dt)
                         p.Velocity <- p.Velocity + (p.Acceleration * dt)
+                        p.Position <- p.Position + (p.Velocity * dt)
                         p.Rotation <- p.Rotation + (p.Torque * dt)
                         idx <- idx + 1
 
