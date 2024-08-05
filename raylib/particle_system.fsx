@@ -40,7 +40,7 @@ type Emiter = {
 }
 
 module Particles =
-    let maxParticles = 100_000
+    let maxParticles = 50_000
     let mutable activeParticles = 0
     let particles = Array.init maxParticles (fun i -> {
         Sprite       = Unchecked.defaultof<Sprite>
@@ -101,8 +101,9 @@ module Particles =
 
 rl.InitWindow(screenWidth, screenHeight, "Hello, World!")
 
-// Genereates a Texture Atlas in Memory. This emulates later behaviour and
-// performance better than calling DrawCircle() and DrawRectangle()
+// Genereates a Texture Atlas in Memory. This emulates how a game later works, by
+// drawing some sprite textures instead of calling DrawCircle() or DrawRectangle()
+// or any other built-in shapes.
 let sprites =
     let atlas = rl.LoadRenderTexture(21, 12)
     rl.BeginTextureMode(atlas)
@@ -133,8 +134,8 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             p.Position     <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.Velocity     <- (vec2 (nextF -1f 1f) (nextF -1f 1f)) * 200f
             p.Acceleration <- vec2 0f 100f
+            p.LifeTime     <- nextF 1f 3f
             p.ElapsedTime  <- 0f
-            p.LifeTime     <- nextF 10f 20f
             p.Rotation     <- 0f
             p.Torque       <- nextF -45f 45f
         )
