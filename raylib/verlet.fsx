@@ -13,7 +13,7 @@ open System.Numerics
 let screenWidth, screenHeight    = 1200, 800
 let defaultSpeed                 = 100f
 let circleAmount                 = 100
-let gravity                      = vec2 0f 250f
+let gravity                      = vec2 0f 1000f
 let circleMinSize, circleMaxSize = 5f, 15f
 let mutable showVelocity         = false
 
@@ -50,7 +50,7 @@ module Circle =
             Position     = pos
             // Mass depends on object size, but could be different. For visualaization
             // it makes sense to think a bigger object has more Mass.
-            Mass         = radius
+            Mass         = radius / 6f
             Radius       = radius
             Color        =
                 match nextI 0 5 with
@@ -62,21 +62,10 @@ module Circle =
         }
 
     let update circle (dt:float32) =
-        let acceleration = gravity
-
-        // Okay this is still Euler Method and not Verlet. Looking further into it.
-        // But one important aspect is to update Velocity first before upting the
-        // Position. Updating Velocity first has its own name "Semi-implicit Euler Method"
-        let velocity = circle.Position - circle.OldPosition
-        let newPos   = circle.Position + velocity + (acceleration * dt * dt)
-
+        let acceleration = gravity / circle.Mass
+        let velocity     = circle.Position - circle.OldPosition
         circle.OldPosition <- circle.Position
-        circle.Position    <- newPos
-
-        // Adding some friction to the velocity so it becomes less over time
-        // let friction    = 2f
-        // let negVec      = -circle.Velocity * friction * dt
-        // circle.Velocity <- circle.Velocity + negVec
+        circle.Position    <- circle.Position + velocity + (acceleration * dt * dt)
 
     let draw circle =
         rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
@@ -100,38 +89,30 @@ module Circle =
                 if distance >= neededDistance then
                     ()
                 else
-                    // let relSpeed    = circle.Velocity.Length () - other.Velocity.Length ()
                     let toOther     = toOther / distance // normalize vector
-                    let overlap     = (neededDistance - distance)
-                    let halfOverlap = (toOther * overlap) / 2f
-                    let mass        = circle.Mass + other.Mass
+                    let overlap     = neededDistance - distance
+                    let halfOverlap = toOther * overlap * 0.5f
                     circle.Position <- circle.Position - halfOverlap
-                    // circle.Velocity <- -toOther * ((2f * other.Mass / mass) * relSpeed)
-                    other.Position  <- other.Position + halfOverlap
-                    // other.Velocity  <-  toOther * ((2f * circle.Mass / mass) * relSpeed)
+                    other.Position  <- other.Position  + halfOverlap
 
+    let w, h = float32 screenWidth, float32 screenHeight
     let resolveScreenBoundaryCollision circle =
-        let w = float32 screenWidth
-        let h = float32 screenHeight
-        let pos = circle.Position
         // Collision with Bottom Axis
-        if pos.Y > (h - circle.Radius) then
-            circle.Position <- vec2 pos.X (h - circle.Radius)
-            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f -1f) * 0.2f
+        if circle.Position.Y > (h - circle.Radius) then
+            circle.OldPosition <- circle.Position
+            circle.Position    <- vec2 circle.Position.X (h - circle.Radius)
         // Collision with left Axis
-        if pos.X < circle.Radius then
-            circle.Position <- vec2 circle.Radius pos.Y
-            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 1f 0f) * 0.5f
+        if circle.Position.X < circle.Radius then
+            circle.OldPosition <- circle.Position
+            circle.Position    <- vec2 circle.Radius circle.Position.Y
         // Collision with Right Axis
-        if pos.X > (w - circle.Radius) then
-            circle.Position <- vec2 (w - circle.Radius) pos.Y
-            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 -1f 0f) * 0.5f
+        if circle.Position.X > (w - circle.Radius) then
+            circle.OldPosition <- circle.Position
+            circle.Position    <- vec2 (w - circle.Radius) circle.Position.Y
         // Collision with Up Axis
-        if pos.Y < circle.Radius then
-            circle.Position <- vec2 pos.X circle.Radius
-            // circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f 1f) * 0.5f
-
-
+        if circle.Position.Y < circle.Radius then
+            circle.OldPosition <- circle.Position
+            circle.Position    <- vec2 circle.Position.X circle.Radius
 
 // Circles to draw
 let mutable circles =
@@ -142,6 +123,7 @@ let mutable circles =
 // Game Loop
 rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
 rl.SetTargetFPS(60)
+
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
     let mouse = getMouse()
@@ -151,11 +133,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.DrawFPS(0,0)
 
     if mouse.Left = Down then
-        let circle = {
+        circles.Add({
             Circle.randomCircle defaultSpeed with
-                Position = mouse.Position
-        }
-        circles.Add( circle )
+                OldPosition = mouse.Position
+                Position    = mouse.Position
+        })
 
     for circle in circles do
         // a simulation with 60fps means every movement of every circle is updated
@@ -169,7 +151,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         // Instead of running everything at multiple-times of fps someone could
         // implemented continous collision detection for objects that need it
         // while everything else just runs at fps or better a fixed update time.
-        let subSteps = 1f
+        let subSteps = 2f
         let dt = dt / subSteps
         for i=1 to int subSteps do
             Circle.update circle dt
