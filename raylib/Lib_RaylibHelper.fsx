@@ -14,8 +14,8 @@ let inline toBool (cbool:CBool) : bool =
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
-let nextI min max       = rng.Next(min,max)
-let nextF min max       = min + (rng.NextSingle() * (max-min))
+let randI min max       = rng.Next(min,max)
+let randF min max       = min + (rng.NextSingle() * (max-min))
 
 let color r g b a =
     let mutable c = Color()
