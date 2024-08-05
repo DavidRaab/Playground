@@ -16,6 +16,7 @@ let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
 let randI min max       = rng.Next(min,max)
 let randF min max       = min + (rng.NextSingle() * (max-min))
+let rand  min max       = min + (rng.NextDouble() * (max-min))
 
 let color r g b a =
     let mutable c = Color()

@@ -12,31 +12,80 @@ open System.Numerics
 // Some constants / Game state
 let screenWidth, screenHeight    = 1200, 800
 let circleAmount                 = 200
-let gravity                      = vec2 0f 1000f
-let circleMinSize, circleMaxSize = 5f, 10f
+let circleMinSize, circleMaxSize = 10f, 20f
 let mutable showVelocity         = false
 
-// Class Alias
-type rl = Raylib
+[<Struct>]
+type Vec2 = {
+    X: float
+    Y: float
+}
 
-// Helper functions
+module Vec2 =
+    let create x y = { X = x; Y = y }
+
+    let add a b = {
+        X = a.X + b.X
+        Y = a.Y + b.Y
+    }
+
+    let sub a b = {
+        X = a.X - b.X
+        Y = a.Y - b.Y
+    }
+
+    let multiply a scalar = {
+        X = a.X * scalar
+        Y = a.Y * scalar
+    }
+
+    let length a =
+        sqrt(a.X * a.X + a.Y * a.Y)
+
+    let divide a scalar = {
+        X = a.X / scalar
+        Y = a.Y / scalar
+    }
+
+    let normalize a =
+        divide a (length a)
+
+    let f32 a =
+        Vector2(float32 a.X, float32 a.Y)
+
+    let fromF32 (v:Vector2) =
+        create (float v.X) (float v.Y)
+
+type Vec2 with
+    static member (-) (a:Vec2, b:Vec2) =
+        Vec2.sub a b
+    static member (+) (a:Vec2, b:Vec2) =
+        Vec2.add a b
+    static member (*) (a:Vec2, scalar:float) =
+        Vec2.multiply a scalar
+    static member (/) (a:Vec2, scalar:float) =
+        Vec2.divide a scalar
+
+// Class Alias
+type rl        = Raylib
 let isSame x y = LanguagePrimitives.PhysicalEquality x y
+let gravity    = Vec2.create 0.0 1000.0
 
 // Data-structures
 [<NoComparison; NoEquality>]
 type Circle = {
-    mutable OldPosition: Vector2
-    mutable Position:    Vector2
-    Radius: float32
+    mutable OldPosition: Vec2
+    mutable Position:    Vec2
+    Radius: float
     Color:  Color
 }
 
 module Circle =
     let randomCircle pos = {
-        OldPosition  = pos
-        Position     = pos
-        Radius       = randF circleMinSize circleMaxSize
-        Color        =
+        OldPosition = pos
+        Position    = pos
+        Radius      = float (randF circleMinSize circleMaxSize)
+        Color       =
             match randI 0 5 with
             | 0 -> Color.DarkBlue
             | 1 -> Color.Orange
@@ -45,16 +94,15 @@ module Circle =
             | 4 -> Color.DarkGreen
     }
 
-    let inline update circle (dt:float32) =
+    let inline update circle (dt:float) =
         // Long way:
-        // let velocity = circle.Position - circle.OldPosition
-        // let newPos   = circle.Position + velocity + (gravity * dt * dt)
-        let newPosition     = 2f * circle.Position - circle.OldPosition + (gravity * dt * dt)
+        let velocity = Vec2.sub circle.Position circle.OldPosition
         circle.OldPosition <- circle.Position
-        circle.Position    <- newPosition
+        circle.Position    <- circle.Position + velocity + (gravity * dt * dt)
+        // let newPosition     = 2f * circle.Position - circle.OldPosition + (gravity * dt * dt)
 
     let draw circle =
-        rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
+        rl.DrawCircle (int circle.Position.X, int circle.Position.Y, float32 circle.Radius, circle.Color)
         if showVelocity then
             let velocity = circle.Position - circle.OldPosition
             rl.DrawLine (
@@ -70,40 +118,40 @@ module Circle =
                 ()
             else
                 let toOther        = other.Position - circle.Position
-                let distance       = toOther.Length ()
+                let distance       = Vec2.length toOther
                 let neededDistance = circle.Radius + other.Radius
-                if distance >= neededDistance then
+                if distance > neededDistance then
                     ()
                 else
                     let toOther     = toOther / distance // normalize vector
                     let overlap     = neededDistance - distance
-                    let halfOverlap = 0.5f * overlap * toOther
+                    let halfOverlap = toOther * 0.5 * overlap
                     circle.Position <- circle.Position - halfOverlap
                     other.Position  <- other.Position  + halfOverlap
 
     let w, h = float32 screenWidth, float32 screenHeight
     let resolveScreenBoundaryCollision circle =
         // Collision with Bottom Axis
-        if circle.Position.Y > (h - circle.Radius) then
+        if circle.Position.Y > (float h - circle.Radius) then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- vec2 circle.Position.X (h - circle.Radius)
+            circle.Position    <- Vec2.create circle.Position.X (float h - circle.Radius)
         // Collision with left Axis
         if circle.Position.X < circle.Radius then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- vec2 circle.Radius circle.Position.Y
+            circle.Position    <- Vec2.create circle.Radius circle.Position.Y
         // Collision with Right Axis
-        if circle.Position.X > (w - circle.Radius) then
+        if circle.Position.X > (float w - circle.Radius) then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- vec2 (w - circle.Radius) circle.Position.Y
+            circle.Position    <- Vec2.create (float w - circle.Radius) circle.Position.Y
         // Collision with Up Axis
         if circle.Position.Y < circle.Radius then
             // circle.OldPosition <- circle.Position
-            circle.Position    <- vec2 circle.Position.X circle.Radius
+            circle.Position    <- Vec2.create circle.Position.X circle.Radius
 
 // Circles to draw
 let mutable circles =
     ResizeArray<_>(
-        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f)))
+        Seq.init circleAmount (fun i -> Circle.randomCircle (Vec2.create (rand 0 1200) (rand 0 800)))
     )
 
 // Game Loop
@@ -111,43 +159,34 @@ rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
 rl.SetTargetFPS(60)
 
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
-    let dt    = rl.GetFrameTime()
+    let dt    = float <| rl.GetFrameTime()
     let mouse = getMouse()
 
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
-    rl.DrawFPS(0,0)
 
+    // Spawn circles
     if mouse.Left = Down then
-        circles.Add(Circle.randomCircle mouse.Position)
+        circles.Add(Circle.randomCircle (Vec2.fromF32 mouse.Position))
 
-    // a simulation with 60fps means every movement of every circle is updated
-    // every 1/60. A computer/game/program needs to calculate how much something
-    // moved in this time-frame. Adding substeps of 2 for example means that
-    // on each frame the update runs twice with half the frame-time. So
-    // even when game runs at 60 fps, its simulated as running at 120 fps.
-    // This way the simulation becomes better, collision detection works better
-    // with fast moving objects and so on. But it also costs much performance.
-    //
-    // Instead of running everything at multiple-times of fps someone could
-    // implemented continous collision detection for objects that need it
-    // while everything else just runs at fps or better a fixed update time.
-    // let subSteps = 2f
-    // let dt       = dt / subSteps
-    // for i=1 to int subSteps do
+    // Update Circles
+    let subSteps = 4.0
+    let dt       = dt / subSteps
+    for i=1 to int subSteps do
+        for circle in circles do
+            Circle.resolveScreenBoundaryCollision circle
+            Circle.resolveCollision circle circles
+            Circle.update circle dt
+
     for circle in circles do
-        Circle.resolveScreenBoundaryCollision circle
-        Circle.resolveCollision circle circles
-        Circle.update circle dt
         Circle.draw circle
 
-    // for circle in circles do
-
+    // Draw GUI
+    rl.DrawFPS(0,0)
     rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
-
     if guiButton (rect 325f 10f 150f 30f) "New Circles" then
         circles <- ResizeArray<_>( Seq.init circleAmount (fun i ->
-            Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f))
+            Circle.randomCircle (Vec2.create (rand 0 1200) (rand 0 800))
         ))
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity
