@@ -1,6 +1,6 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
-#load "Lib_RaylibHelper.fsx"
+#load "../Lib_RaylibHelper.fsx"
 open Raylib_cs
 open Lib_RaylibHelper
 open System.Numerics
