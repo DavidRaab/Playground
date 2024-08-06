@@ -31,6 +31,12 @@ type Stick = {
     Length: float32
 }
 
+[<NoComparison; NoEquality>]
+type VerletStructure = {
+    Points: Point list
+    Sticks: Stick list
+}
+
 module Verlet =
     let point color radius position = {
         OldPosition  = position
@@ -44,6 +50,10 @@ module Verlet =
         First  = first
         Second = second
         Length = Vector2.Distance(first.Position, second.Position)
+    }
+
+    let newLength length stick = {
+        stick with Length = length
     }
 
     let updatePoint point (dt:float32) =
@@ -83,21 +93,20 @@ module Verlet =
         let a = point color 10f x
         let b = point color 10f y
         let c = point color 10f z
-
-        let points = [a; b; c]
-        let sticks = [stick a b; stick b c; stick c a]
-
-        points,sticks
+        {
+            Points = [a; b; c]
+            Sticks = [stick a b; stick b c; stick c a]
+        }
 
     let quad color x y z w =
         let a = point color 10f x
         let b = point color 10f y
         let c = point color 10f z
         let d = point color 10f w
-
-        let points = [a;b;c;d]
-        let sticks = [stick a b; stick b c; stick c d; stick d a; stick a c; stick b d]
-        points,sticks
+        {
+            Points = [a;b;c;d]
+            Sticks = [stick a b; stick b c; stick c d; stick d a; stick a c; stick b d]
+        }
 
     let rectangle color x y w h =
         let tl = vec2 x y
@@ -110,17 +119,24 @@ module Verlet =
 let mutable points = ResizeArray<_>()
 let mutable sticks = ResizeArray<_>()
 
-let addPS (p,s) =
-    points.AddRange p
-    sticks.AddRange s
+let addStructure { Points = ps; Sticks = ss } =
+    points.AddRange ps
+    sticks.AddRange ss
 
 let resetWorld () =
     points.Clear()
     sticks.Clear()
-    addPS <| Verlet.triangle  Color.Yellow (vec2 400f 400f) (vec2 600f 200f) (vec2 500f 500f)
-    addPS <| Verlet.triangle  Color.Brown  (vec2 100f 100f) (vec2 100f 200f) (vec2 200f 300f)
-    addPS <| Verlet.quad      Color.Blue   (vec2 300f 300f) (vec2 400f 300f) (vec2 500f 500f) (vec2 200f 500f)
-    addPS <| Verlet.rectangle Color.DarkGray 600f 300f 100f 250f
+    addStructure <| Verlet.triangle  Color.Yellow (vec2 400f 400f) (vec2 600f 200f) (vec2 500f 500f)
+    addStructure <| Verlet.triangle  Color.Brown  (vec2 100f 100f) (vec2 100f 200f) (vec2 200f 300f)
+    addStructure <| Verlet.quad      Color.Blue   (vec2 300f 300f) (vec2 400f 300f) (vec2 500f 500f) (vec2 200f 500f)
+    addStructure <| Verlet.rectangle Color.DarkGray 600f 300f 100f 250f
+
+    let r1 = Verlet.rectangle Color.DarkGreen  500f 500f 50f 50f
+    let r2 = Verlet.rectangle Color.DarkPurple 100f 100f 100f 100f
+    sticks.Add(Verlet.stick r1.Points.[0] r2.Points.[0] |> Verlet.newLength 50f)
+
+    addStructure r1
+    addStructure r2
 
 resetWorld()
 
