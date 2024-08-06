@@ -40,10 +40,10 @@ module Verlet =
         Color        = color
     }
 
-    let stick first second length = {
+    let stick first second = {
         First  = first
         Second = second
-        Length = length
+        Length = Vector2.Distance(first.Position, second.Position)
     }
 
     let updatePoint point (dt:float32) =
@@ -84,14 +84,27 @@ module Verlet =
         let b = point color 10f y
         let c = point color 10f z
 
-        let dab = Vector2.Distance(x,y)
-        let dbc = Vector2.Distance(y,z)
-        let dca = Vector2.Distance(z,x)
-
         let points = [a; b; c]
-        let sticks = [stick a b dab; stick b c dbc; stick c a dca]
+        let sticks = [stick a b; stick b c; stick c a]
 
         points,sticks
+
+    let quad color x y z w =
+        let a = point color 10f x
+        let b = point color 10f y
+        let c = point color 10f z
+        let d = point color 10f w
+
+        let points = [a;b;c;d]
+        let sticks = [stick a b; stick b c; stick c d; stick d a; stick a c; stick b d]
+        points,sticks
+
+    let rectangle color x y w h =
+        let tl = vec2 x y
+        let tr = tl + (vec2 w 0f)
+        let bl = tl + (vec2 0f h)
+        let br = tl + (vec2 w h)
+        quad color tl tr bl br
 
 // The World to Draw
 let mutable points = ResizeArray<_>()
@@ -104,8 +117,10 @@ let addPS (p,s) =
 let resetWorld () =
     points.Clear()
     sticks.Clear()
-    addPS <| Verlet.triangle Color.Yellow (vec2 400f 400f) (vec2 600f 200f) (vec2 500f 500f)
-    addPS <| Verlet.triangle Color.Brown  (vec2 100f 100f) (vec2 100f 200f) (vec2 200f 300f)
+    addPS <| Verlet.triangle  Color.Yellow (vec2 400f 400f) (vec2 600f 200f) (vec2 500f 500f)
+    addPS <| Verlet.triangle  Color.Brown  (vec2 100f 100f) (vec2 100f 200f) (vec2 200f 300f)
+    addPS <| Verlet.quad      Color.Blue   (vec2 300f 300f) (vec2 400f 300f) (vec2 500f 500f) (vec2 200f 500f)
+    addPS <| Verlet.rectangle Color.DarkGray 600f 300f 100f 250f
 
 resetWorld()
 
