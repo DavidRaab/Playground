@@ -15,26 +15,6 @@ type MoveableRect = {
     Color:        Color
 }
 
-type Drageable =
-    | InDrag of rect:MoveableRect * offset:Vector2
-    | NoDrag
-
-let processMoveables selection moveables mouse =
-    match selection, mouse.Left with
-        | NoDrag,   (Up|Released) -> NoDrag
-        | InDrag _, (Up|Released) -> NoDrag
-        | NoDrag, (Down|Pressed) ->
-            let mutable selected = NoDrag
-            for moveable in moveables do
-                let r = moveable.Rect
-                if toBool <| rl.CheckCollisionPointRec(mouse.Position, r) then
-                    selected <- InDrag (moveable, ((vec2 r.X r.Y) - mouse.Position))
-            selected
-        | InDrag (m,offset), (Down|Pressed) ->
-            let r = m.Rect
-            m.Rect <- rect (mouse.Position.X+offset.X) (mouse.Position.Y+offset.Y) r.Width r.Height
-            InDrag (m,offset)
-
 let moveables = [
     { Rect = rect 100f 100f 100f 100f; Color = Color.Yellow }
     { Rect = rect 200f 200f 100f 100f; Color = Color.Red    }
@@ -52,7 +32,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
-    selection <- processMoveables selection moveables mouse
+    selection <- processDrag selection moveables (fun m -> m.Rect) mouse (fun moveable offset ->
+        let r = moveable.Rect
+        moveable.Rect <- rect (mouse.Position.X-offset.X) (mouse.Position.Y-offset.Y) r.Width r.Height
+    )
 
     for mov in moveables do
         rl.DrawRectangleRec(mov.Rect, mov.Color)

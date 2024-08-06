@@ -109,6 +109,8 @@ let resetWorld () =
 
 resetWorld()
 
+let mutable currentDrag = NoDrag
+
 // Game Loop
 rl.SetConfigFlags(ConfigFlags.Msaa4xHint)
 rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
@@ -121,14 +123,17 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
-    // Spawn circles
-    // if mouse.Left = Down then
-    //     circles.Add(Circle.randomCircle mouse.Position)
-
-    // Update Circles
-    // let subSteps = 2.0f
-    // let dt       = dt / subSteps
-    // for i=1 to int subSteps do
+    // Handles Drag of Points
+    currentDrag <-
+        let toRect p =
+            let x = p.Position.X - p.Radius
+            let y = p.Position.Y - p.Radius
+            let w = p.Radius * 2f
+            let h = p.Radius * 2f
+            rect x y w h
+        processDrag currentDrag points toRect mouse (fun point offset ->
+            point.Position <- mouse.Position
+        )
 
     for point in points do
         Verlet.applyGravity point
