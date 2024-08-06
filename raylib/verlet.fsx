@@ -60,7 +60,8 @@ module Circle =
         circle.Acceleration <- Vector2.Zero
 
     let draw circle =
-        rl.DrawCircle (int circle.Position.X, int circle.Position.Y, float32 circle.Radius, circle.Color)
+        let inline ir x = int (round x)
+        rl.DrawCircle (ir circle.Position.X, ir circle.Position.Y, float32 circle.Radius, circle.Color)
         if showVelocity then
             let velocity = circle.Position - circle.OldPosition
             rl.DrawLine (
