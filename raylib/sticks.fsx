@@ -52,11 +52,16 @@ module Verlet =
         Length = Vector2.Distance(first.Position, second.Position)
     }
 
+    let velocity point =
+        point.Position - point.OldPosition
+
     let newLength length stick = {
         stick with Length = length
     }
 
     let updatePoint point (dt:float32) =
+        // let velocity    = point.Position - point.OldPosition
+        // let newPosition = point.Position + velocity + (point.Acceleration * dt * dt)
         let newPosition     = 2f * point.Position - point.OldPosition + (point.Acceleration * dt * dt)
         point.OldPosition  <- point.Position
         point.Position     <- newPosition
@@ -86,8 +91,8 @@ module Verlet =
         if point.Position.Y < point.Radius then
             point.Position.Y <- point.Radius
 
-    let applyGravity point =
-        point.Acceleration <- point.Acceleration + gravity
+    let addForce point force =
+        point.Acceleration <- point.Acceleration + force
 
     let triangle color x y z =
         let a = point color 10f x
@@ -167,12 +172,13 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         )
 
     for point in points do
-        Verlet.applyGravity point
+        Verlet.addForce point gravity
         Verlet.applyScreen point
         Verlet.updatePoint point dt
 
-    for stick in sticks do
-        Verlet.updateStick stick
+    for i=1 to 2 do
+        for stick in sticks do
+            Verlet.updateStick stick
 
     for stick in sticks do
         let a,b = stick.First, stick.Second
