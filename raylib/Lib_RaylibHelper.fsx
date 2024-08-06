@@ -6,6 +6,9 @@ open System.Numerics
 // Type alias for Raylib
 type rl = Raylib
 
+// Better reference equality
+let isSame x y = LanguagePrimitives.PhysicalEquality x y
+
 // Annoying CBool in Raylib-cs. Most functions return a CBool. Not a problem in
 // C# because of implicit type conversion. But F# has explicit type conversion
 let inline toBool (cbool:CBool) : bool =

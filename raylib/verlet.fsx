@@ -16,10 +16,6 @@ let circleSizes                  = [| 7f; 13f; 21f |]
 let gravity                      = vec2 0f 1000f
 let mutable showVelocity         = false
 
-// Class Alias
-type rl        = Raylib
-let isSame x y = LanguagePrimitives.PhysicalEquality x y
-
 // Data-structures
 [<NoComparison; NoEquality>]
 type Circle = {
