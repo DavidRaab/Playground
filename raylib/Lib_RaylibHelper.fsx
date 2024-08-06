@@ -17,6 +17,8 @@ let rng                 = System.Random ()
 let randI min max       = rng.Next(min,max)
 let randF min max       = min + (rng.NextSingle() * (max-min))
 let rand  min max       = min + (rng.NextDouble() * (max-min))
+let randomOf (array:array<'a>) =
+    array.[randI 0 array.Length]
 
 let color r g b a =
     let mutable c = Color()
