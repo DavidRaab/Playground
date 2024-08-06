@@ -80,9 +80,14 @@ module Circle =
                 if distance < neededDistance then
                     let toOther     = toOther / distance // normalize vector
                     let overlap     = neededDistance - distance
-                    let halfOverlap = 0.5f * overlap * toOther
-                    circle.Position <- circle.Position - halfOverlap
-                    other.Position  <- other.Position  + halfOverlap
+                    // The simulation becomes better when the collision is not
+                    // fully resolved in one step. The idea is to just move
+                    // the object into the target position, but not set the
+                    // target position. But this can require multiple subSteps
+                    // in the gameLoop.
+                    let correction  = 0.25f * overlap * toOther
+                    circle.Position <- circle.Position - correction
+                    other.Position  <- other.Position  + correction
 
     let w, h = float32 screenWidth, float32 screenHeight
     let resolveScreenBoundaryCollision circle =
