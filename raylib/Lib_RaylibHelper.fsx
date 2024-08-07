@@ -14,6 +14,9 @@ let isSame x y = LanguagePrimitives.PhysicalEquality x y
 let inline toBool (cbool:CBool) : bool =
     CBool.op_Implicit cbool
 
+// Constants: multiply by this constants to transform deg->rad or vice-versa
+let deg2rad             = System.MathF.Tau / 360f
+let rad2deg             = 360f / System.MathF.Tau
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
@@ -22,6 +25,22 @@ let randF min max       = min + (rng.NextSingle() * (max-min))
 let rand  min max       = min + (rng.NextDouble() * (max-min))
 let randomOf (array:array<'a>) =
     array.[randI 0 array.Length]
+
+module Vector2 =
+    // rotation matrix:
+    // cos(a)  -sin(a)
+    // sin(a)   cos(a)
+    /// Rotates a Vector by the origin (0,0). Rotation direction depends on how you
+    /// view the world. In a game where +X means right and +Y means down because (0,0)
+    /// is the TopLeft corner of the screen. Then rotating by +90° rotates something
+    /// anti-clockswise.
+    let rotate (rad:float32) (v:Vector2) =
+        let x = (v.X *  (cos rad)) + (v.Y * (sin rad))
+        let y = (v.X * -(sin rad)) + (v.Y * (cos rad))
+        Vector2(x,y)
+
+    let rotateDeg (deg:float32) (v:Vector2) =
+        rotate (deg * deg2rad) v
 
 let color r g b a =
     let mutable c = Color()
