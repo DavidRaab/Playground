@@ -85,7 +85,7 @@ module Circle =
                     // the object into the target position, but not set the
                     // target position. But this can require multiple subSteps
                     // in the gameLoop.
-                    let correction  = 0.25f * overlap * toOther
+                    let correction  = 0.5f * overlap * toOther
                     circle.Position <- circle.Position - correction
                     other.Position  <- other.Position  + correction
 
@@ -127,13 +127,15 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         circles.Add(Circle.randomCircle mouse.Position)
 
     // Update Circles
-    let subSteps = 2.0f
-    let dt       = dt / subSteps
-    for i=1 to int subSteps do
+    for circle in circles do
+        // Add Gravity
+        circle.Acceleration <- circle.Acceleration + gravity
+        Circle.update circle dt
+
+    // running collision resolution multiple times makes the simutalion more stable
+    // no need to also subStep Circle.update
+    for i=1 to 2 do
         for circle in circles do
-            // Add Gravity
-            circle.Acceleration <- circle.Acceleration + gravity
-            Circle.update circle dt
             Circle.resolveScreenBoundaryCollision circle
             Circle.resolveCollision circle circles
 
