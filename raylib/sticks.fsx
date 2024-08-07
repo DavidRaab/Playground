@@ -81,6 +81,12 @@ module Verlet =
         // Collision with Bottom Axis
         if point.Position.Y > (h - point.Radius) then
             point.Position.Y <- h - point.Radius
+            // Adds a friction to the ground by moving the position 5% against
+            // the velocity (this is not frame-rate independent) but this kind
+            // of simulation anyway should be run in a fixed update loop. So
+            // i don't care for that demo here.
+            let velocity = -(velocity point)
+            point.Position <- point.Position + (velocity * 0.05f)
         // Collision with left Axis
         if point.Position.X < point.Radius then
             point.Position.X <- point.Radius
