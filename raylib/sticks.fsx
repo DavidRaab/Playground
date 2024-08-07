@@ -167,9 +167,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             let w = p.Radius * 2f
             let h = p.Radius * 2f
             rect x y w h
-        processDrag currentDrag points toRect mouse (fun point offset ->
-            point.Position <- mouse.Position
-        )
+        processDrag currentDrag points toRect mouse
+    match currentDrag with
+    | NoDrag                -> ()
+    | InDrag (point,offset) ->
+        point.Position <- mouse.Position
 
     for point in points do
         Verlet.addForce point gravity

@@ -32,10 +32,12 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
-    selection <- processDrag selection moveables (fun m -> m.Rect) mouse (fun moveable offset ->
+    selection <- processDrag selection moveables (fun m -> m.Rect) mouse
+    match selection with
+    | NoDrag -> ()
+    | InDrag (moveable,offset) ->
         let r = moveable.Rect
         moveable.Rect <- rect (mouse.Position.X-offset.X) (mouse.Position.Y-offset.Y) r.Width r.Height
-    )
 
     for mov in moveables do
         rl.DrawRectangleRec(mov.Rect, mov.Color)

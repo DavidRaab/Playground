@@ -108,23 +108,16 @@ type Drageable<'a> =
 /// `mouse` current state of mouse
 /// `doAction` function that is executed when user Drags something. The drageable object is passed and an offset where the user clicked on the collision rect
 /// returns the new state of the drageable state.
-let processDrag current drageables toCollision mouse doAction : Drageable<'a> =
+let processDrag current drageables toCollision mouse : Drageable<'a> =
     match current, mouse.Left with
     | NoDrag,   (Up|Released) -> NoDrag
     | InDrag _, (Up|Released) -> NoDrag
     | NoDrag, (Down|Pressed)  ->
         let mutable selected = NoDrag
-
         for drageable in drageables do
             let rect = toCollision drageable
             if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
                 selected <- InDrag (drageable, (mouse.Position - (vec2 rect.X rect.Y)))
-
-        match selected with
-        | NoDrag                    -> NoDrag
-        | InDrag (drageable,offset) ->
-            doAction drageable offset
-            selected
+        selected
     | InDrag (drageable,offset), (Down|Pressed) ->
-        doAction drageable offset
         InDrag (drageable,offset)
