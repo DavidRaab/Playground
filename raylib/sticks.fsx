@@ -32,6 +32,11 @@ type Stick = {
     Length: float32
 }
 
+type BreakableStick = {
+    Stick:  Stick
+    Factor: float32
+}
+
 [<NoComparison; NoEquality>]
 type VerletStructure = {
     Points: Point list
@@ -51,6 +56,11 @@ module Verlet =
         First  = first
         Second = second
         Length = Vector2.Distance(first.Position, second.Position)
+    }
+
+    let breakableStick first second factor = {
+        Stick  = stick first second
+        Factor = factor
     }
 
     let velocity point =
@@ -76,6 +86,10 @@ module Verlet =
 
         stick.First.Position  <- stick.First.Position  + (n * correction * 0.5f)
         stick.Second.Position <- stick.Second.Position - (n * correction * 0.5f)
+
+    let shouldBreak bstick =
+        let axis = bstick.Stick.First.Position - bstick.Stick.Second.Position
+        axis.Length() > (bstick.Stick.Length * bstick.Factor)
 
     let w, h = float32 screenWidth, float32 screenHeight
     let applyScreen point =
@@ -135,9 +149,10 @@ module Verlet =
 // The World to Draw
 type Pinned = { Point: Point; PinnedPosition: Vector2 }
 
-let mutable points = ResizeArray<_>()
-let mutable sticks = ResizeArray<_>()
-let mutable pinned = ResizeArray<_>()
+let mutable points  = ResizeArray<_>()
+let mutable sticks  = ResizeArray<_>()
+let mutable bsticks = ResizeArray<_>()
+let mutable pinned  = ResizeArray<_>()
 
 let addStructure { Points = ps; Sticks = ss } =
     points.AddRange ps
@@ -152,15 +167,15 @@ let resetWorld () =
     addStructure <| Verlet.rectangle Color.DarkGray 600f 300f 100f 250f
 
     // Generates two boxes sticked together
-    let r1 = Verlet.rectangle Color.DarkGreen  500f 500f 50f 50f
-    let r2 = Verlet.rectangle Color.DarkPurple 100f 100f 100f 100f
-    sticks.Add(Verlet.stick r1.Points.[0] r2.Points.[0] |> Verlet.newLength 50f)
+    let r1 = Verlet.rectangle Color.DarkGreen  600f 200f 100f 100f
+    let r2 = Verlet.rectangle Color.DarkPurple 740f 340f  50f  50f
+    bsticks.Add({ Stick = Verlet.stick r1.Points.[3] r2.Points.[0] |> Verlet.newLength 50f; Factor = 3f })
     addStructure r1
     addStructure r2
 
     // Pin the two boxes to a position
     pinned.Add({
-        Point          = r2.Points.[3]
+        Point          = r1.Points.[0]
         PinnedPosition = vec2 600f 200f
     })
 
@@ -206,6 +221,17 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         Verlet.updatePoint point dt
 
     for i=1 to 2 do
+        // Crap: But works, just for testing
+        let toBeDeleted = ResizeArray<_>()
+        for bstick in bsticks do
+            if Verlet.shouldBreak bstick then
+                toBeDeleted.Add(bstick)
+            else
+                Verlet.updateStick bstick.Stick
+        for del in toBeDeleted do
+            bsticks.Remove(del) |> ignore
+
+        // update sticks
         for stick in sticks do
             Verlet.updateStick stick
 
@@ -217,6 +243,19 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     for stick in sticks do
         let a,b = stick.First, stick.Second
         rl.DrawLine(int a.Position.X, int a.Position.Y, int b.Position.X, int b.Position.Y, Color.DarkGray)
+
+    for bstick in bsticks do
+        let a,b = bstick.Stick.First, bstick.Stick.Second
+        let g = Color.DarkGray
+        let r = Color.Red
+        let n =
+            let len = (a.Position - b.Position).Length()  - bstick.Stick.Length
+            let max = bstick.Stick.Length * bstick.Factor - bstick.Stick.Length
+            len / max
+        let f32 = float32
+        let cv = Vector3.Lerp(Vector3(f32 g.R, f32 g.G, f32 g.B), Vector3(f32 r.R, f32 r.G, f32 r.B), n)
+        let c  = color (byte cv.X) (byte cv.Y) (byte cv.Z) 255uy
+        rl.DrawLine(int a.Position.X, int a.Position.Y, int b.Position.X, int b.Position.Y, c)
 
     for point in points do
         rl.DrawCircle(int point.Position.X, int point.Position.Y, point.Radius, point.Color)
