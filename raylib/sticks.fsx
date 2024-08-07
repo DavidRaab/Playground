@@ -11,6 +11,7 @@ open System.Numerics
 
 // Some constants / Game state
 let screenWidth, screenHeight    = 1200, 800
+let mutable useGravity           = false
 let gravity                      = vec2 0f 1000f
 let mutable showVelocity         = false
 
@@ -97,8 +98,13 @@ module Verlet =
         if point.Position.Y < point.Radius then
             point.Position.Y <- point.Radius
 
-    let addForce point force =
+    let addForce force point =
         point.Acceleration <- point.Acceleration + force
+
+    let placeAt (pos:Vector2) vstruct =
+        for point in vstruct.Points do
+            point.OldPosition <- point.OldPosition + pos
+            point.Position    <- point.Position    + pos
 
     let triangle color x y z =
         let a = point color 10f x
@@ -127,8 +133,11 @@ module Verlet =
         quad color tl tr bl br
 
 // The World to Draw
+type Pinned = { Point: Point; PinnedPosition: Vector2 }
+
 let mutable points = ResizeArray<_>()
 let mutable sticks = ResizeArray<_>()
+let mutable pinned = ResizeArray<_>()
 
 let addStructure { Points = ps; Sticks = ss } =
     points.AddRange ps
@@ -142,12 +151,23 @@ let resetWorld () =
     addStructure <| Verlet.quad      Color.Blue   (vec2 300f 300f) (vec2 400f 300f) (vec2 500f 500f) (vec2 200f 500f)
     addStructure <| Verlet.rectangle Color.DarkGray 600f 300f 100f 250f
 
+    // Generates two boxes sticked together
     let r1 = Verlet.rectangle Color.DarkGreen  500f 500f 50f 50f
     let r2 = Verlet.rectangle Color.DarkPurple 100f 100f 100f 100f
     sticks.Add(Verlet.stick r1.Points.[0] r2.Points.[0] |> Verlet.newLength 50f)
-
     addStructure r1
     addStructure r2
+
+    // Pin the two boxes to a position
+    pinned.Add({
+        Point          = r2.Points.[3]
+        PinnedPosition = vec2 600f 200f
+    })
+
+    let tri = Verlet.triangle Color.Gold (vec2 0f 0f) (vec2 100f 0f) (vec2 50f 100f)
+    Verlet.placeAt (vec2 800f 100f) tri
+
+    addStructure tri
 
 resetWorld()
 
@@ -167,7 +187,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Handles Drag of Points
     currentDrag <-
-        let toRect p =
+        let toRect (p:Point) =
             let x = p.Position.X - p.Radius
             let y = p.Position.Y - p.Radius
             let w = p.Radius * 2f
@@ -180,7 +200,8 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         point.Position <- mouse.Position
 
     for point in points do
-        Verlet.addForce point gravity
+        if useGravity then
+            Verlet.addForce gravity point
         Verlet.applyScreen point
         Verlet.updatePoint point dt
 
@@ -188,6 +209,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         for stick in sticks do
             Verlet.updateStick stick
 
+    for pin in pinned do
+        pin.Point.Position    <- pin.PinnedPosition
+        pin.Point.OldPosition <- pin.PinnedPosition
+
+    // Draw Point & Sticks
     for stick in sticks do
         let a,b = stick.First, stick.Second
         rl.DrawLine(int a.Position.X, int a.Position.Y, int b.Position.X, int b.Position.Y, Color.DarkGray)
@@ -198,6 +224,8 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     // Draw GUI
     rl.DrawFPS(0,0)
     rl.DrawText(System.String.Format("Points: {0} Sticks: {1}", points.Count, sticks.Count), 800, 10, 24, Color.Yellow)
+    if guiButton (rect 100f 10f 200f 30f) (if useGravity then "Disable Gravity" else "Enable Gravity") then
+        useGravity <- not useGravity
     if guiButton (rect 325f 10f 150f 30f) "Reset World" then
         resetWorld ()
 
