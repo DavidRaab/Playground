@@ -25,6 +25,14 @@ type Point = {
     Color:  Color
 }
 
+(*
+Instead of Stick, BreakableStick and so on it is better to think of different
+kind of constraints. Stick is really a Length constraint keeping an exact length.
+there also could be a min,max constraint keeping it in a certain range. Angle
+constraint that keeps something in an angle. Push away constrain that just
+keeps a certain kind of distance and so on. For this I would probably rework
+the data-structures.
+*)
 [<NoComparison; NoEquality>]
 type Stick = {
     First:  Point
@@ -32,6 +40,7 @@ type Stick = {
     Length: float32
 }
 
+[<NoComparison; NoEquality>]
 type BreakableStick = {
     Stick:  Stick
     Factor: float32
@@ -120,10 +129,8 @@ module Verlet =
             point.OldPosition <- point.OldPosition + pos
             point.Position    <- point.Position    + pos
 
-    let triangle color x y z =
-        let a = point color 10f x
-        let b = point color 10f y
-        let c = point color 10f z
+    let triangle color (x:Vector2) y z =
+        let a,b,c = point color 10f x, point color 10f y, point color 10f z
         {
             Points = [a; b; c]
             Sticks = [stick a b; stick b c; stick c a]
@@ -146,6 +153,33 @@ module Verlet =
         let br = tl + (vec2 w h)
         quad color tl tr bl br
 
+    let ropePoints points =
+        let rec loop points =
+            match points with
+            | []      -> ValueNone
+            | [point] -> ValueSome { Points = [point]; Sticks = [] }
+            | current :: rest ->
+                match loop rest with
+                | ValueNone      -> ValueNone
+                | ValueSome rope ->
+                    let next = List.head rope.Points
+                    ValueSome {
+                        Points = current :: rope.Points
+                        Sticks = (stick current next) :: rope.Sticks
+                    }
+        loop points
+
+    let rope color radius steps (start:Vector2) stop =
+        let point  = point color radius
+        let moveby = Vector2.Divide(stop - start, (float32 steps + 1f))
+        let rope = ropePoints [
+            yield  point start
+            yield! List.init steps (fun i -> point (start + (moveby * (1f + float32 i))))
+            yield  point stop
+        ]
+        // This cannot fail because i always at least pass start/stop as points
+        rope.Value
+
 // The World to Draw
 type Pinned = { Point: Point; PinnedPosition: Vector2 }
 
@@ -161,12 +195,16 @@ let addStructure { Points = ps; Sticks = ss } =
 let resetWorld () =
     points.Clear()
     sticks.Clear()
+    bsticks.Clear()
+    pinned.Clear()
+
+    // Some basic shapes
     addStructure <| Verlet.triangle  Color.Yellow (vec2 400f 400f) (vec2 600f 200f) (vec2 500f 500f)
     addStructure <| Verlet.triangle  Color.Brown  (vec2 100f 100f) (vec2 100f 200f) (vec2 200f 300f)
     addStructure <| Verlet.quad      Color.Blue   (vec2 300f 300f) (vec2 400f 300f) (vec2 500f 500f) (vec2 200f 500f)
     addStructure <| Verlet.rectangle Color.DarkGray 600f 300f 100f 250f
 
-    // Generates two boxes sticked together
+    // Generates two boxes sticked together and pinned at a place
     let r1 = Verlet.rectangle Color.DarkGreen  600f 200f 100f 100f
     let r2 = Verlet.rectangle Color.DarkPurple 740f 340f  50f  50f
     bsticks.Add({
@@ -175,17 +213,38 @@ let resetWorld () =
     })
     addStructure r1
     addStructure r2
-
-    // Pin the two boxes to a position
     pinned.Add({
         Point          = r1.Points.[0]
         PinnedPosition = vec2 600f 200f
     })
 
+    // Testing placeAt
     let tri = Verlet.triangle Color.Gold (vec2 0f 0f) (vec2 100f 0f) (vec2 50f 100f)
     Verlet.placeAt (vec2 800f 100f) tri
-
     addStructure tri
+
+    // Generate ropes
+    let ropes = [
+        let cl = lerpColor Color.Green Color.Maroon
+        Verlet.rope (cl   0f) 5f  0 (vec2 100f 100f) (vec2 300f 100f)
+        Verlet.rope (cl 0.2f) 5f  2 (vec2 150f 100f) (vec2 350f 100f)
+        Verlet.rope (cl 0.4f) 5f  4 (vec2 200f 100f) (vec2 400f 100f)
+        Verlet.rope (cl 0.6f) 5f  6 (vec2 250f 100f) (vec2 450f 100f)
+        Verlet.rope (cl 0.8f) 5f  8 (vec2 300f 100f) (vec2 500f 100f)
+        Verlet.rope (cl   1f) 5f 10 (vec2 350f 100f) (vec2 550f 100f)
+    ]
+
+    for rope in ropes do
+        let head = List.head rope.Points
+        pinned.Add({
+            Point          = head
+            PinnedPosition = head.Position
+        })
+
+    List.iter addStructure ropes
+
+    // One free rope to play with
+    addStructure (Verlet.rope Color.Lime 5f 12 (vec2 600f 100f) (vec2 1100f 100f))
 
 resetWorld()
 
