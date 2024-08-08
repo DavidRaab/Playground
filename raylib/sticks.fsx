@@ -52,6 +52,12 @@ type VerletStructure = {
     Sticks: Stick list
 }
 
+[<NoComparison; NoEquality>]
+type Pinned = {
+    Point:          Point
+    PinnedPosition: Vector2
+}
+
 module Verlet =
     let point color radius position = {
         OldPosition  = position
@@ -109,8 +115,9 @@ module Verlet =
             // the velocity (this is not frame-rate independent) but this kind
             // of simulation anyway should be run in a fixed update loop. So
             // i don't care for that demo here.
-            let velocity = -(velocity point)
-            point.Position <- point.Position + (velocity * 0.05f)
+            if useGravity then
+                let velocity = -(velocity point)
+                point.Position <- point.Position + (velocity * 0.05f)
         // Collision with left Axis
         if point.Position.X < point.Radius then
             point.Position.X <- point.Radius
@@ -128,6 +135,11 @@ module Verlet =
         for point in vstruct.Points do
             point.OldPosition <- point.OldPosition + pos
             point.Position    <- point.Position    + pos
+
+    let pinFirst structure =
+        match structure with
+        | { Points = []          } -> None
+        | { Points = first::rest } -> Some { Point = first; PinnedPosition = first.Position }
 
     let triangle color (x:Vector2) y z =
         let a,b,c = point color 10f x, point color 10f y, point color 10f z
@@ -177,7 +189,7 @@ module Verlet =
         ]
 
 // The World to Draw
-type Pinned = { Point: Point; PinnedPosition: Vector2 }
+
 
 let mutable points  = ResizeArray<_>()
 let mutable sticks  = ResizeArray<_>()
@@ -230,17 +242,12 @@ let resetWorld () =
         Verlet.rope (cl   1f) 5f 10 (vec2 350f 100f) (vec2 550f 100f)
     ]
 
-    for rope in ropes do
-        let head = List.head rope.Points
-        pinned.Add({
-            Point          = head
-            PinnedPosition = head.Position
-        })
-
+    // Pins the first point of every rope
+    List.iter (Verlet.pinFirst >> Option.iter pinned.Add) ropes
     List.iter addStructure ropes
 
     // One free rope to play with
-    addStructure (Verlet.rope Color.Lime 5f 12 (vec2 600f 100f) (vec2 1100f 100f))
+    addStructure (Verlet.rope Color.Lime 5f 16 (vec2 600f 100f) (vec2 1100f 100f))
 
 resetWorld()
 
