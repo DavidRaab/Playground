@@ -169,7 +169,10 @@ let resetWorld () =
     // Generates two boxes sticked together
     let r1 = Verlet.rectangle Color.DarkGreen  600f 200f 100f 100f
     let r2 = Verlet.rectangle Color.DarkPurple 740f 340f  50f  50f
-    bsticks.Add({ Stick = Verlet.stick r1.Points.[3] r2.Points.[0] |> Verlet.newLength 50f; Factor = 3f })
+    bsticks.Add({
+        Stick  = Verlet.stick r1.Points.[3] r2.Points.[0] |> Verlet.newLength 50f
+        Factor = 3f
+    })
     addStructure r1
     addStructure r2
 
@@ -221,15 +224,12 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         Verlet.updatePoint point dt
 
     for i=1 to 2 do
-        // Crap: But works, just for testing
-        let toBeDeleted = ResizeArray<_>()
-        for bstick in bsticks do
-            if Verlet.shouldBreak bstick then
-                toBeDeleted.Add(bstick)
-            else
-                Verlet.updateStick bstick.Stick
-        for del in toBeDeleted do
-            bsticks.Remove(del) |> ignore
+        if bsticks.Count > 0 then
+            for idx=bsticks.Count-1 downto 0 do
+                if Verlet.shouldBreak bsticks.[idx] then
+                    bsticks.RemoveAt(idx)
+                else
+                    Verlet.updateStick bsticks.[idx].Stick
 
         // update sticks
         for stick in sticks do
@@ -246,15 +246,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     for bstick in bsticks do
         let a,b = bstick.Stick.First, bstick.Stick.Second
-        let g = Color.DarkGray
-        let r = Color.Red
         let n =
             let len = (a.Position - b.Position).Length()  - bstick.Stick.Length
             let max = bstick.Stick.Length * bstick.Factor - bstick.Stick.Length
             len / max
-        let f32 = float32
-        let cv = Vector3.Lerp(Vector3(f32 g.R, f32 g.G, f32 g.B), Vector3(f32 r.R, f32 r.G, f32 r.B), n)
-        let c  = color (byte cv.X) (byte cv.Y) (byte cv.Z) 255uy
+        let c = lerpColor Color.DarkGray Color.Red n
         rl.DrawLine(int a.Position.X, int a.Position.Y, int b.Position.X, int b.Position.Y, c)
 
     for point in points do

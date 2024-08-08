@@ -26,6 +26,11 @@ let rand  min max       = min + (rng.NextDouble() * (max-min))
 let randomOf (array:array<'a>) =
     array.[randI 0 array.Length]
 
+/// Lerps a value between start and stop. Expects a normalized value between 0 and 1.
+/// when normalized value is 0 it returns start, when it turns 1 it returns stop.
+let inline lerp start stop normalized =
+    (start * (LanguagePrimitives.GenericOne - normalized)) + (stop * normalized)
+
 module Vector2 =
     // rotation matrix:
     // cos(a)  -sin(a)
@@ -42,13 +47,20 @@ module Vector2 =
     let rotateDeg (deg:float32) (v:Vector2) =
         rotate (deg * deg2rad) v
 
-let color r g b a =
+let inline color r g b a =
     let mutable c = Color()
-    c.R <- r
-    c.G <- g
-    c.B <- b
-    c.A <- a
+    c.R <- byte r
+    c.G <- byte g
+    c.B <- byte b
+    c.A <- byte a
     c
+
+let lerpColor (start:Color) (stop:Color) (n:float32) =
+    color
+        (lerp (float32 start.R) (float32 stop.R) n)
+        (lerp (float32 start.G) (float32 stop.G) n)
+        (lerp (float32 start.B) (float32 stop.B) n)
+        (lerp (float32 start.A) (float32 stop.A) n)
 
 // A nicer way to get Mouse State
 type MouseButtonState =
