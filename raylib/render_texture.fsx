@@ -1,37 +1,36 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
+#load "Lib_RaylibHelper.fsx"
 open Raylib_cs
 open System.Numerics
+open Lib_RaylibHelper
 
-let color r g b a =
-    let mutable c = Color()
-    c.R <- r
-    c.G <- g
-    c.B <- b
-    c.A <- a
-    c
+rl.InitWindow(800, 800, "Render Texture")
 
-Raylib.InitWindow(800, 800, "Render Texture")
-
-let rt  = Raylib.LoadRenderTexture(800, 800)
+let rt  = rl.LoadRenderTexture(800, 800)
 // Size should be 800,800, but Height must be flipped
 let src = Rectangle(0f, 0f, float32 rt.Texture.Width, float32 -rt.Texture.Height)
 let dst = Rectangle(0f, 0f, 800f,  800f)
 
-Raylib.SetTargetFPS(60)
-while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
+rl.BeginTextureMode rt
+rl.DrawText("Mouse. Left=Draw Right=Clear", 0, 0, 20, Color.Yellow)
+rl.EndTextureMode ()
+
+rl.SetTargetFPS(60)
+while not <| toBool (rl.WindowShouldClose()) do
+    let mouse = getMouse ()
     // Now all drawing operations draws to an Texture on the GPU
-    Raylib.BeginTextureMode(rt)
-    if CBool.op_Implicit <| Raylib.IsMouseButtonDown(MouseButton.Left) then
-        Raylib.DrawCircleV(Raylib.GetMousePosition(), 2f, Color.RayWhite)
-    if CBool.op_Implicit <| Raylib.IsMouseButtonPressed(MouseButton.Right) then
-        Raylib.ClearBackground(color 0uy 0uy 0uy 0uy)
-    Raylib.EndTextureMode()
+    rl.BeginTextureMode(rt)
+    if mouse.Left = Down then
+        rl.DrawCircleV(mouse.Position, 2f, Color.RayWhite)
+    if mouse.Right = Pressed then
+        rl.ClearBackground(color 0 0 0 0)
+    rl.EndTextureMode()
 
-    // we draw just the texture
-    Raylib.BeginDrawing ()
-    Raylib.ClearBackground(Color.Black)
-    Raylib.DrawTexturePro(rt.Texture, src, dst, Vector2.Zero, 0f, Color.White)
-    Raylib.EndDrawing ()
+    // draw texture to screen
+    rl.BeginDrawing ()
+    rl.ClearBackground(Color.Black)
+    rl.DrawTexturePro(rt.Texture, src, dst, Vector2.Zero, 0f, Color.White)
+    rl.EndDrawing ()
 
-Raylib.CloseWindow()
+rl.CloseWindow()
