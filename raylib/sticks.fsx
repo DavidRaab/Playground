@@ -189,8 +189,6 @@ module Verlet =
         ]
 
 // The World to Draw
-
-
 let mutable points  = ResizeArray<_>()
 let mutable sticks  = ResizeArray<_>()
 let mutable bsticks = ResizeArray<_>()
