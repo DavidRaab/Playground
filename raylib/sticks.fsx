@@ -156,29 +156,25 @@ module Verlet =
     let ropePoints points =
         let rec loop points =
             match points with
-            | []      -> ValueNone
-            | [point] -> ValueSome { Points = [point]; Sticks = [] }
+            | []      -> { Points = [];      Sticks = [] }
+            | [point] -> { Points = [point]; Sticks = [] }
             | current :: rest ->
-                match loop rest with
-                | ValueNone      -> ValueNone
-                | ValueSome rope ->
-                    let next = List.head rope.Points
-                    ValueSome {
-                        Points = current :: rope.Points
-                        Sticks = (stick current next) :: rope.Sticks
-                    }
+                let rope = loop rest
+                let next = List.head rope.Points
+                {
+                    Points = current :: rope.Points
+                    Sticks = (stick current next) :: rope.Sticks
+                }
         loop points
 
     let rope color radius steps (start:Vector2) stop =
         let point  = point color radius
         let moveby = Vector2.Divide(stop - start, (float32 steps + 1f))
-        let rope = ropePoints [
+        ropePoints [
             yield  point start
             yield! List.init steps (fun i -> point (start + (moveby * (1f + float32 i))))
             yield  point stop
         ]
-        // This cannot fail because i always at least pass start/stop as points
-        rope.Value
 
 // The World to Draw
 type Pinned = { Point: Point; PinnedPosition: Vector2 }
