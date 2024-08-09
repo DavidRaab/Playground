@@ -115,8 +115,10 @@ let guiButton (rect:Rectangle) (text:string) : bool =
     if mouse.Left = Pressed then isHover else false
 
 type Drageable<'a> =
-    | InDrag of 'a * offset:Vector2
     | NoDrag
+    | StartDrag of 'a * offset:Vector2
+    | InDrag    of 'a * offset:Vector2
+    | EndDrag   of 'a * offset:Vector2
 
 type CollisionType =
     | Rect   of Rectangle
@@ -130,19 +132,54 @@ type CollisionType =
 /// `doAction` function that is executed when user Drags something. The drageable object is passed and an offset where the user clicked on the collision rect
 /// returns the new state of the drageable state.
 let processDrag current drageables toCollision mouse : Drageable<'a> =
-    match current, mouse.Left with
-    | NoDrag,   (Up|Released) -> NoDrag
-    | InDrag _, (Up|Released) -> NoDrag
-    | NoDrag, (Down|Pressed)  ->
+    let checkCollision () =
         let mutable selected = NoDrag
         for drageable in drageables do
             match toCollision drageable with
             | Rect rect ->
                 if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
-                    selected <- InDrag (drageable, (mouse.Position - (vec2 rect.X rect.Y)))
+                    selected <- StartDrag (drageable, (mouse.Position - (vec2 rect.X rect.Y)))
             | Circle (pos,radius) ->
                 if toBool <| rl.CheckCollisionPointCircle(mouse.Position, pos, radius) then
-                    selected <- InDrag (drageable, (mouse.Position - (vec2 pos.X pos.Y)))
+                    selected <- StartDrag (drageable, (mouse.Position - (vec2 pos.X pos.Y)))
         selected
-    | InDrag (drageable,offset), (Down|Pressed) ->
-        InDrag (drageable,offset)
+
+    // Some transistions seems odd as the should not happen. For example
+    // StartDrag, Up should never happened. When the frame before the Mouse
+    // was in a pressed State, then in the next frame there must be a Released
+    // State. Logic tells us that his must happen. But computers and technology
+    // fails. Sometimes it could be that some state is not correctly updated.
+    // maybe mouse was unplugged? Battery run out so no state at all happend?
+    // Maybe the user switched Application with Alt-Tab and Released the mouse
+    // button there? Maybe the game itself interruped the player with a window
+    // and goes into a freezing state without proberly checking state? Who knows
+    // I have seen enough application/mouses where mouse drag/events wasn't
+    // handled correctly, something is in drag state and a game/app didn't get
+    // it correctly. So all States and State Transistions even if they seems
+    // to be dump must be handled correctly.
+    match current, mouse.Left with
+    | NoDrag, Up                        -> NoDrag
+    | NoDrag, Released                  -> NoDrag
+    // I could handle both states differently and it would make a difference.
+    // In this setup you can hold the mouse button down, and with the mouse
+    // button down you can go over something drageable and it "correctly"
+    // picks up the drag. But maybe this is wrong behaviour? Who knows.
+    | NoDrag, (Down|Pressed)            -> checkCollision ()
+    | StartDrag (drag,offset), Up       -> EndDrag (drag,offset)
+    | StartDrag (drag,offset), Released -> EndDrag (drag,offset)
+    // We go into EndDrag not to StartDrag or recheck collision because the
+    // current State has something draged. So if for whatever reason a
+    // Pressed was issues, something wrong must be happened. So we first must
+    // issue an EndDrag until a new StartDrag can be processed. This gives
+    // the program the chance to correctly end a StartDrag state.
+    | StartDrag (drag,offset), Pressed  -> EndDrag (drag,offset)
+    | StartDrag (drag,offset), Down     -> InDrag  (drag,offset)
+    | InDrag (drag,offset), Up          -> EndDrag (drag,offset)
+    // Again, some bad stuff happened
+    | InDrag (drag,offset), Pressed     -> EndDrag (drag,offset)
+    | InDrag (drag,offset), Down        -> InDrag (drag,offset)
+    | InDrag (drag,offset), Released    -> EndDrag (drag,offset)
+    | EndDrag _, Up                     -> NoDrag
+    | EndDrag _, Down                   -> checkCollision ()
+    | EndDrag _, Pressed                -> checkCollision ()
+    | EndDrag _, Released               -> NoDrag

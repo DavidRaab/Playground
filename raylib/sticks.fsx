@@ -267,9 +267,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     currentDrag <-
         processDrag currentDrag points (fun p -> Circle (p.Position,p.Radius)) mouse
     match currentDrag with
-    | NoDrag                -> ()
-    | InDrag (point,offset) ->
-        point.Position <- mouse.Position
+    | NoDrag                   -> ()
+    | StartDrag (point,offset)
+    | InDrag    (point,offset) -> point.Position <- mouse.Position
+    | EndDrag _                -> ()
 
     for point in points do
         if useGravity then
