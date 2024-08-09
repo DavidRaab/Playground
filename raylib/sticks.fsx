@@ -254,8 +254,8 @@ let mutable currentDrag = NoDrag
 // Game Loop
 rl.SetConfigFlags(ConfigFlags.Msaa4xHint)
 rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
+Rlgl.EnableSmoothLines()
 rl.SetTargetFPS(60)
-
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
     let mouse = getMouse()
