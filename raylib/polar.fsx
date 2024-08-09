@@ -27,6 +27,7 @@ let toCartesian polar =
 let mutable drawPixel = true
 
 rl.InitWindow(screenWidth, screenHeight, "Polar Coordinates")
+Rlgl.EnableSmoothLines()
 rl.SetTargetFPS(60)
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt = rl.GetFrameTime()
