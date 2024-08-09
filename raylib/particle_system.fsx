@@ -110,6 +110,7 @@ let sprites =
     rl.DrawRectangle(0, 0, 10, 10, Color.DarkBlue)
     rl.DrawCircle(15, 5, 4f, Color.Yellow)
     rl.EndTextureMode()
+    rl.SetTextureFilter(atlas.Texture, TextureFilter.Trilinear)
     [|
         { Texture = atlas.Texture; Source = rect  0f 0f 10f 10f } // Rect
         { Texture = atlas.Texture; Source = rect 10f 0f 11f 11f } // Circle

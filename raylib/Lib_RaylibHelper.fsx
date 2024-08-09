@@ -31,6 +31,11 @@ let randomOf (array:array<'a>) =
 let inline lerp start stop normalized =
     (start * (LanguagePrimitives.GenericOne - normalized)) + (stop * normalized)
 
+let wrap (start:float32) (stop:float32) (value:float32) : float32 =
+    let diff     = stop - start
+    let quotient = floor ((value - start) / diff)
+    value - (diff * quotient)
+
 module Vector2 =
     // rotation matrix:
     // cos(a)  -sin(a)
