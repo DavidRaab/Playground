@@ -32,7 +32,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
-    selection <- processDrag selection moveables (fun m -> m.Rect) mouse
+    selection <- processDrag selection moveables (fun m -> Rect m.Rect) mouse
     match selection with
     | NoDrag -> ()
     | InDrag (moveable,offset) ->

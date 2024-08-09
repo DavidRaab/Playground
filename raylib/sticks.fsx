@@ -265,13 +265,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Handles Drag of Points
     currentDrag <-
-        let toRect (p:Point) =
-            let x = p.Position.X - p.Radius
-            let y = p.Position.Y - p.Radius
-            let w = p.Radius * 2f
-            let h = p.Radius * 2f
-            rect x y w h
-        processDrag currentDrag points toRect mouse
+        processDrag currentDrag points (fun p -> Circle (p.Position,p.Radius)) mouse
     match currentDrag with
     | NoDrag                -> ()
     | InDrag (point,offset) ->

@@ -118,6 +118,10 @@ type Drageable<'a> =
     | InDrag of 'a * offset:Vector2
     | NoDrag
 
+type CollisionType =
+    | Rect   of Rectangle
+    | Circle of position:Vector2 * radius:float32
+
 /// A Helper function to Drag any kind of object around.
 /// `current` is the current variable that holds the current state of the drag.
 /// `drageables` the objects that should be drageable
@@ -132,9 +136,13 @@ let processDrag current drageables toCollision mouse : Drageable<'a> =
     | NoDrag, (Down|Pressed)  ->
         let mutable selected = NoDrag
         for drageable in drageables do
-            let rect = toCollision drageable
-            if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
-                selected <- InDrag (drageable, (mouse.Position - (vec2 rect.X rect.Y)))
+            match toCollision drageable with
+            | Rect rect ->
+                if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
+                    selected <- InDrag (drageable, (mouse.Position - (vec2 rect.X rect.Y)))
+            | Circle (pos,radius) ->
+                if toBool <| rl.CheckCollisionPointCircle(mouse.Position, pos, radius) then
+                    selected <- InDrag (drageable, (mouse.Position - (vec2 pos.X pos.Y)))
         selected
     | InDrag (drageable,offset), (Down|Pressed) ->
         InDrag (drageable,offset)
