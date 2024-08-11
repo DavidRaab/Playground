@@ -8,7 +8,7 @@ open Lib_RaylibHelper
 open Lib_SpatialTree
 
 type Point = {
-    Pos:    Vector2
+    mutable Pos: Vector2
     Radius: float32
 }
 
@@ -24,10 +24,10 @@ let mutable drag = NoDrag
 
 // Camera with 0,0 in screen center
 let mutable camera = Camera2D()
-camera.Target   <- vec2 0f 0f
 camera.Offset   <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
-camera.Zoom     <- 1f
+camera.Target   <- vec2 0f 0f
 camera.Rotation <- 0f
+camera.Zoom     <- 1f
 
 rl.InitWindow(screenWidth, screenHeight, "Hello, World!")
 rl.SetMouseCursor(MouseCursor.Crosshair)
@@ -37,7 +37,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let mouse = getMouse (Some camera)
     // Process Drageable
     drag <- processDrag drag points (fun p -> Circle (p.Pos,p.Radius)) mouse
-
+    match drag with
+    | StartDrag (point,off)
+    | InDrag    (point,off) -> point.Pos <- worldPosition mouse
+    | _ -> ()
 
     rl.BeginDrawing()
 
@@ -51,6 +54,8 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     // Draw UI
     rl.DrawFPS(0,0)
+    rl.DrawLine(0,400, 1200,400, Color.Red)
+    rl.DrawLine(600,0, 600,800,  Color.Green)
     onHover drag (fun point -> rl.DrawText(sprintf "Point {%f,%f}" point.Pos.X point.Pos.Y, 10, 770, 24, Color.Yellow))
 
     rl.EndDrawing()
