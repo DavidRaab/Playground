@@ -33,7 +33,7 @@ module Circle =
         Acceleration = Vector2.Zero
         Radius       = randomOf circleSizes
         Color =
-            match randI 0 5 with
+            match randi 0 5 with
             | 0 -> Color.DarkBlue
             | 1 -> Color.Orange
             | 2 -> Color.Purple
@@ -107,7 +107,7 @@ module Circle =
 // Circles to draw.
 let circles =
     ResizeArray<_>(
-        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f)))
+        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f)))
     )
 
 // Game Loop
@@ -156,7 +156,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         circles.Clear()
         circles.AddRange(
             Seq.init circleAmount (fun i ->
-                Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f))
+                Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f))
         ))
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity

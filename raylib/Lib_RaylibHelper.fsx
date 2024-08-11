@@ -20,11 +20,10 @@ let rad2deg             = 360f / System.MathF.Tau
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
-let randI min max       = rng.Next(min,max)
-let randF min max       = min + (rng.NextSingle() * (max-min))
-let rand  min max       = min + (rng.NextDouble() * (max-min))
+let randi min max       = rng.Next(min,max)
+let randf min max       = min + (rng.NextSingle() * (max-min))
 let randomOf (array:array<'a>) =
-    array.[randI 0 array.Length]
+    array.[randi 0 array.Length]
 
 /// Lerps a value between start and stop. Expects a normalized value between 0 and 1.
 /// when normalized value is 0 it returns start, when it turns 1 it returns stop.
@@ -35,6 +34,9 @@ let wrap (start:float32) (stop:float32) (value:float32) : float32 =
     let diff     = stop - start
     let quotient = floor ((value - start) / diff)
     value - (diff * quotient)
+
+let wrapi (start:int) (stop:int) (value:int) : int =
+    int (wrap (float32 start) (float32 stop) (float32 value))
 
 module Vector2 =
     // rotation matrix:

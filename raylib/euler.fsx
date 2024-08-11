@@ -132,7 +132,7 @@ module Circle =
 let mutable circles =
     ResizeArray<_>(
         Seq.init circleAmount (fun i ->
-            Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f))
+            Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f))
         )
     )
 
@@ -176,7 +176,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     if guiButton (rect 325f 10f 150f 30f) "New Circles" then
         circles <- ResizeArray<_>( Seq.init circleAmount (fun i ->
-            Circle.randomCircle (vec2 (randF 0f 1200f) (randF 0f 800f))
+            Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f))
         ))
     if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
         showVelocity <- not showVelocity

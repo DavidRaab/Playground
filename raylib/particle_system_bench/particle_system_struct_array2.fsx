@@ -140,10 +140,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             p.[idx].Sprite      <- sprite
             p.[idx].Position    <- vec2 (float32 screenWidth / 2f) (float32 screenHeight / 2f)
             p.[idx].ElapsedTime <- 0f
-            p.[idx].LifeTime    <- randF 10f 20f
+            p.[idx].LifeTime    <- randf 10f 20f
             p.[idx].Rotation    <- 0f
-            p.[idx].Torque      <- randF -45f 45f
-            p.[idx].Velocity    <- (vec2 (randF -1f 1f) (randF -1f 1f)) * 200f
+            p.[idx].Torque      <- randf -45f 45f
+            p.[idx].Velocity    <- (vec2 (randf -1f 1f) (randf -1f 1f)) * 200f
         )
 
     // Draw particles
