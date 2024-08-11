@@ -10,10 +10,10 @@ open System.Numerics
 // https://www.youtube.com/watch?v=lS_qeBy3aQI  --  Writing a Physics Engine from Scratch
 
 // Some constants / Game state
-let screenWidth, screenHeight    = 1200, 800
-let mutable useGravity           = false
-let gravity                      = vec2 0f 1000f
-let mutable showVelocity         = false
+let screenWidth, screenHeight = 1200, 800
+let mutable useGravity        = false
+let gravity                   = vec2 0f 1000f
+let mutable showVelocity      = false
 
 // Data-structures
 [<NoComparison; NoEquality>]
