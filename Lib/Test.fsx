@@ -1,6 +1,6 @@
 module Test =
-    let mutable Accuracy   = 0.0000001
-    let mutable Accuracy32 = 0.0000001f
+    let mutable Accuracy   = 0.00000001
+    let mutable Accuracy32 = 0.00001f
     let mutable testsSoFar = 0
 
     /// Defines how many tests should be runned
@@ -42,6 +42,14 @@ module Test =
         then printfn "ok %d - %s" testsSoFar name
         else printfn "not ok %d - %s" testsSoFar name
 
+    /// Sets the float32 Accuracy32 to a specific value, runs all test against that value
+    /// and resets to the previous value. Useful if you do computations with less accuracy
+    let withAccuracy32 accuracy f =
+        let previous = Accuracy32
+        Accuracy32 <- accuracy
+        f ()
+        Accuracy32 <- previous
+
     /// Explicitly pass a test, used in conjunction with `fail`
     let pass name =
         testsSoFar <- testsSoFar + 1
@@ -56,6 +64,16 @@ module Test =
     let float got expected name =
         testsSoFar <- testsSoFar + 1
         if   abs (got - expected) < Accuracy
+        then printfn "ok %d - %s" testsSoFar name
+        else
+            printfn "not ok %d - %s" testsSoFar name
+            printfn "#   Failed test '%s'" name
+            printfn "#          got: %f" got
+            printfn "#     expected: %f" expected
+
+    let float32 (got:float32) expected name =
+        testsSoFar <- testsSoFar + 1
+        if   abs (got - expected) < Accuracy32
         then printfn "ok %d - %s" testsSoFar name
         else
             printfn "not ok %d - %s" testsSoFar name

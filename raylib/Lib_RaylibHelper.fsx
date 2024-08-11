@@ -26,6 +26,16 @@ let randi min max       = min + (rng.Next() % (max-min+1))
 let randf min max       = min + (rng.NextSingle() * (max-min))
 let randomOf array      = Array.item (randi 0 (Array.length array - 1)) array
 
+/// cosinus, but expects degree instead of rad
+let inline cosd  degree = cos  (degree * deg2rad)
+/// acosinus, but returns degree instead of rad
+let inline acosd number = (acos number) * rad2deg
+/// sinus, but expects degree instead of rad
+let inline sind  degree = sin  (degree * deg2rad)
+/// asinus, but returns degree instead of rad
+let inline asind number = (asin number) * rad2deg
+
+
 /// Lerps a value between start and stop. Expects a normalized value between 0 and 1.
 /// when normalized value is 0 it returns start, when it turns 1 it returns stop.
 let inline lerp start stop normalized =
