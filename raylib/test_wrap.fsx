@@ -31,11 +31,30 @@ Test.is
     [-16f; -8.1f]
     "small step"
 
-let xs     = [1..10]
-let length = List.length xs
-Test.is
-    (List.map (fun idx -> xs.[int (wrap 0f (float32 length) (float32 idx))]) [-5 .. 5])
-    [6;7;8;9;10;1;2;3;4;5;6]
-    "negative indexing in array"
+let t1 =
+    let xs     = [1..10]
+    let length = List.length xs
+    Test.is
+        (List.map (fun idx -> xs.[int (wrap 0f (float32 length) (float32 idx))]) [-5 .. 5])
+        [6;7;8;9;10;1;2;3;4;5;6]
+        "negative indexing in array"
+
+    Test.is
+        (List.map (fun idx -> xs.[int (wrap 0f (float32 length) (float32 idx))]) [8 .. 12])
+        [9;10;1;2;3]
+        "indexing above maximum"
+
+let t2 =
+    let xs     = [1..10]
+    let length = List.length xs
+    Test.is
+        (List.map (fun idx -> xs.[wrapi 0 length idx]) [-5 .. 5])
+        [6;7;8;9;10;1;2;3;4;5;6]
+        "negative indexing in array"
+
+    Test.is
+        (List.map (fun idx -> xs.[wrapi 0 length idx]) [8 .. 12])
+        [9;10;1;2;3]
+        "indexing above maximum"
 
 Test.doneTesting ()
