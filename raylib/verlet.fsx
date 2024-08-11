@@ -33,12 +33,12 @@ module Circle =
         Acceleration = Vector2.Zero
         Radius       = randomOf circleSizes
         Color =
-            match randi 0 5 with
-            | 0 -> Color.DarkBlue
-            | 1 -> Color.Orange
-            | 2 -> Color.Purple
-            | 3 -> Color.SkyBlue
-            | 4 -> Color.DarkGreen
+            match randi 1 5 with
+            | 1 -> Color.DarkBlue
+            | 2 -> Color.Orange
+            | 3 -> Color.Purple
+            | 4 -> Color.SkyBlue
+            | 5 -> Color.DarkGreen
     }
 
     let inline update circle (dt:float32) =

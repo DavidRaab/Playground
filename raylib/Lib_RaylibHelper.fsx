@@ -20,10 +20,11 @@ let rad2deg             = 360f / System.MathF.Tau
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
-let randi min max       = rng.Next(min,max)
+/// random integer between min and max both inclusive
+let randi min max       = min + (rng.Next() % (max-min+1))
+/// random float between min and max both inclusive
 let randf min max       = min + (rng.NextSingle() * (max-min))
-let randomOf (array:array<'a>) =
-    array.[randi 0 array.Length]
+let randomOf array      = Array.item (randi 0 (Array.length array - 1)) array
 
 /// Lerps a value between start and stop. Expects a normalized value between 0 and 1.
 /// when normalized value is 0 it returns start, when it turns 1 it returns stop.
