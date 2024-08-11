@@ -76,7 +76,7 @@ let unfuckMinBy f xs =
 Raylib.InitWindow(800, 800, "Raycast")
 Raylib.SetTargetFPS(60)
 while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
-    let mouse = getMouse ()
+    let mouse = getMouse None
 
     Raylib.BeginDrawing ()
     Raylib.ClearBackground(Color.Black)

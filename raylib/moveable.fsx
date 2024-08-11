@@ -28,7 +28,7 @@ rl.InitWindow(screenWidth, screenHeight, "Hello, World!")
 rl.SetTargetFPS(60)
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
-    let mouse = getMouse ()
+    let mouse = getMouse None
 
     selection <- processDrag selection moveables (fun m -> Rect m.Rect) mouse
     match selection with

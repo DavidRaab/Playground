@@ -93,6 +93,7 @@ type MouseState = {
     Left:     MouseButtonState
     Middle:   MouseButtonState
     Right:    MouseButtonState
+    Camera:   Camera2D option
 }
 
 // Get State of a Mouse Button
@@ -102,16 +103,17 @@ let getMouseButtonState button =
     elif Raylib.IsMouseButtonDown     button |> toBool then Down
     else Up
 
-let getMouse () = {
+let getMouse camera = {
     Position = Raylib.GetMousePosition ()
     Wheel    = Raylib.GetMouseWheelMove ()
     Left     = getMouseButtonState MouseButton.Left
     Middle   = getMouseButtonState MouseButton.Middle
     Right    = getMouseButtonState MouseButton.Right
+    Camera   = camera
 }
 
 let guiButton (rect:Rectangle) (text:string) : bool =
-    let mouse = getMouse()
+    let mouse = getMouse None
 
     let isHover = Raylib.CheckCollisionPointRec(mouse.Position, rect) |> toBool
     if isHover
@@ -148,26 +150,34 @@ type CollisionType =
 let processDrag current drageables toCollision mouse : Drageable<'a> =
     let checkHover () =
         let mutable hover = NoDrag
+        let position =
+            match mouse.Camera with
+            | None        -> mouse.Position
+            | Some camera -> rl.GetScreenToWorld2D(mouse.Position, camera)
         for drageable in drageables do
             match toCollision drageable with
             | Rect rect ->
-                if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
+                if toBool <| rl.CheckCollisionPointRec(position, rect) then
                     hover <- Hover drageable
             | Circle (pos,radius) ->
-                if toBool <| rl.CheckCollisionPointCircle(mouse.Position, pos, radius) then
+                if toBool <| rl.CheckCollisionPointCircle(position, pos, radius) then
                     hover <- Hover drageable
         hover
 
     let checkCollision () =
         let mutable selected = NoDrag
+        let position =
+            match mouse.Camera with
+            | None        -> mouse.Position
+            | Some camera -> rl.GetScreenToWorld2D(mouse.Position, camera)
         for drageable in drageables do
             match toCollision drageable with
             | Rect rect ->
-                if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
-                    selected <- StartDrag (drageable, (mouse.Position - (vec2 rect.X rect.Y)))
+                if toBool <| rl.CheckCollisionPointRec(position, rect) then
+                    selected <- StartDrag (drageable, (position - (vec2 rect.X rect.Y)))
             | Circle (pos,radius) ->
                 if toBool <| rl.CheckCollisionPointCircle(mouse.Position, pos, radius) then
-                    selected <- StartDrag (drageable, (mouse.Position - (vec2 pos.X pos.Y)))
+                    selected <- StartDrag (drageable, (position - (vec2 pos.X pos.Y)))
         selected
 
     // Some transistions seems odd as the should not happen. For example
@@ -213,3 +223,8 @@ let processDrag current drageables toCollision mouse : Drageable<'a> =
     | EndDrag _, Down                   -> checkCollision ()
     | EndDrag _, Pressed                -> checkCollision ()
     | EndDrag _, Released               -> NoDrag
+
+let inline onHover drag ([<InlineIfLambda>] f) =
+    match drag with
+    | Hover x -> f x
+    | _       -> ()
