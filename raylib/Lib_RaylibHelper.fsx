@@ -15,8 +15,8 @@ let inline toBool (cbool:CBool) : bool =
     CBool.op_Implicit cbool
 
 // Constants: multiply by this constants to transform deg->rad or vice-versa
-let deg2rad             = System.MathF.Tau / 360f
-let rad2deg             = 360f / System.MathF.Tau
+let deg2rad             = System.MathF.PI / 180f
+let rad2deg             = 180f / System.MathF.PI
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
