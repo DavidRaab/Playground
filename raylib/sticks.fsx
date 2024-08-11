@@ -264,10 +264,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.ClearBackground(Color.Black)
 
     // Handles Drag of Points
-    currentDrag <-
-        processDrag currentDrag points (fun p -> Circle (p.Position,p.Radius)) mouse
+    currentDrag <- processDrag currentDrag points (fun p -> Circle (p.Position,p.Radius)) mouse
     match currentDrag with
     | NoDrag                   -> ()
+    | Hover _                  -> ()
     | StartDrag (point,offset)
     | InDrag    (point,offset) -> point.Position <- mouse.Position
     | EndDrag _                -> ()
@@ -310,6 +310,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     for point in points do
         rl.DrawCircle(int point.Position.X, int point.Position.Y, point.Radius, point.Color)
+
+    // Highlight current hovered element
+    match currentDrag with
+    | Hover point -> rl.DrawCircleLinesV(point.Position, point.Radius, Color.RayWhite)
+    | _           -> ()
 
     // Draw GUI
     rl.DrawFPS(0,0)

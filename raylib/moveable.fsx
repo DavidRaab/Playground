@@ -32,13 +32,16 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     selection <- processDrag selection moveables (fun m -> Rect m.Rect) mouse
     match selection with
-    | NoDrag      -> ()
+    | NoDrag   -> ()
+    | Hover  _ -> ()
     | StartDrag (mov,offset)   -> movingRect <- Some (mov.Rect,offset)
     | InDrag (moveable,offset) ->
         let r = moveable.Rect
         moveable.Rect <- rect (mouse.Position.X-offset.X) (mouse.Position.Y-offset.Y) r.Width r.Height
     | EndDrag _ -> movingRect <- None
 
+
+    // Begin Drawing
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
 
@@ -57,6 +60,10 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
 
     for mov in moveables do
         rl.DrawRectangleRec(mov.Rect, mov.Color)
+
+    match selection with
+    | Hover drag -> rl.DrawRectangleLinesEx(drag.Rect, 1f, Color.RayWhite)
+    | _          -> ()
 
     rl.EndDrawing ()
 rl.CloseWindow()

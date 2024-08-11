@@ -129,6 +129,7 @@ let guiButton (rect:Rectangle) (text:string) : bool =
 
 type Drageable<'a> =
     | NoDrag
+    | Hover     of 'a
     | StartDrag of 'a * offset:Vector2
     | InDrag    of 'a * offset:Vector2
     | EndDrag   of 'a * offset:Vector2
@@ -145,6 +146,18 @@ type CollisionType =
 /// `doAction` function that is executed when user Drags something. The drageable object is passed and an offset where the user clicked on the collision rect
 /// returns the new state of the drageable state.
 let processDrag current drageables toCollision mouse : Drageable<'a> =
+    let checkHover () =
+        let mutable hover = NoDrag
+        for drageable in drageables do
+            match toCollision drageable with
+            | Rect rect ->
+                if toBool <| rl.CheckCollisionPointRec(mouse.Position, rect) then
+                    hover <- Hover drageable
+            | Circle (pos,radius) ->
+                if toBool <| rl.CheckCollisionPointCircle(mouse.Position, pos, radius) then
+                    hover <- Hover drageable
+        hover
+
     let checkCollision () =
         let mutable selected = NoDrag
         for drageable in drageables do
@@ -171,13 +184,17 @@ let processDrag current drageables toCollision mouse : Drageable<'a> =
     // it correctly. So all States and State Transistions even if they seems
     // to be dump must be handled correctly.
     match current, mouse.Left with
-    | NoDrag, Up                        -> NoDrag
-    | NoDrag, Released                  -> NoDrag
+    | NoDrag, Up                        -> checkHover ()
+    | NoDrag, Released                  -> checkHover ()
     // I could handle both states differently and it would make a difference.
     // In this setup you can hold the mouse button down, and with the mouse
     // button down you can go over something drageable and it "correctly"
     // picks up the drag. But maybe this is wrong behaviour? Who knows.
     | NoDrag, (Down|Pressed)            -> checkCollision ()
+    | Hover _, Up                       -> checkHover ()
+    | Hover _, Released                 -> checkHover ()
+    | Hover _, Down                     -> checkCollision ()
+    | Hover _, Pressed                  -> checkCollision ()
     | StartDrag (drag,offset), Up       -> EndDrag (drag,offset)
     | StartDrag (drag,offset), Released -> EndDrag (drag,offset)
     // We go into EndDrag not to StartDrag or recheck collision because the
