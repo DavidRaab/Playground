@@ -31,4 +31,11 @@ Test.is
     [-16f; -8.1f]
     "small step"
 
+let xs     = [1..10]
+let length = List.length xs
+Test.is
+    (List.map (fun idx -> xs.[int (wrap 0f (float32 length) (float32 idx))]) [-5 .. 5])
+    [6;7;8;9;10;1;2;3;4;5;6]
+    "negative indexing in array"
+
 Test.doneTesting ()
