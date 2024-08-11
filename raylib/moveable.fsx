@@ -30,9 +30,6 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
     let mouse = getMouse ()
 
-    rl.BeginDrawing ()
-    rl.ClearBackground(Color.Black)
-
     selection <- processDrag selection moveables (fun m -> Rect m.Rect) mouse
     match selection with
     | NoDrag      -> ()
@@ -41,6 +38,9 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         let r = moveable.Rect
         moveable.Rect <- rect (mouse.Position.X-offset.X) (mouse.Position.Y-offset.Y) r.Width r.Height
     | EndDrag _ -> movingRect <- None
+
+    rl.BeginDrawing ()
+    rl.ClearBackground(Color.Black)
 
     match movingRect with
     | None               -> ()
