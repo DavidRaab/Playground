@@ -112,6 +112,11 @@ let getMouse camera = {
     Camera   = camera
 }
 
+let worldPosition mouse =
+    match mouse.Camera with
+    | None        -> mouse.Position
+    | Some camera -> rl.GetScreenToWorld2D(mouse.Position, camera)
+
 let guiButton (rect:Rectangle) (text:string) : bool =
     let mouse = getMouse None
 
@@ -150,10 +155,7 @@ type CollisionType =
 let processDrag current drageables toCollision mouse : Drageable<'a> =
     let checkHover () =
         let mutable hover = NoDrag
-        let position =
-            match mouse.Camera with
-            | None        -> mouse.Position
-            | Some camera -> rl.GetScreenToWorld2D(mouse.Position, camera)
+        let position      = worldPosition mouse
         for drageable in drageables do
             match toCollision drageable with
             | Rect rect ->
@@ -166,18 +168,15 @@ let processDrag current drageables toCollision mouse : Drageable<'a> =
 
     let checkCollision () =
         let mutable selected = NoDrag
-        let position =
-            match mouse.Camera with
-            | None        -> mouse.Position
-            | Some camera -> rl.GetScreenToWorld2D(mouse.Position, camera)
+        let position         = worldPosition mouse
         for drageable in drageables do
             match toCollision drageable with
             | Rect rect ->
                 if toBool <| rl.CheckCollisionPointRec(position, rect) then
                     selected <- StartDrag (drageable, (position - (vec2 rect.X rect.Y)))
-            | Circle (pos,radius) ->
-                if toBool <| rl.CheckCollisionPointCircle(mouse.Position, pos, radius) then
-                    selected <- StartDrag (drageable, (position - (vec2 pos.X pos.Y)))
+            | Circle (center,radius) ->
+                if toBool <| rl.CheckCollisionPointCircle(position, center, radius) then
+                    selected <- StartDrag (drageable, (position - (vec2 center.X center.Y)))
         selected
 
     // Some transistions seems odd as the should not happen. For example
