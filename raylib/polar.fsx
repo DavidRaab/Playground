@@ -21,8 +21,8 @@ let polar angle distance = {
 
 let toCartesian polar =
     vec2
-        ((cos (polar.Angle * deg2rad)) * polar.Distance)
-        ((sin (polar.Angle * deg2rad)) * polar.Distance)
+        (cosd polar.Angle * polar.Distance)
+        (sind polar.Angle * polar.Distance)
 
 let mutable drawPixel = true
 
@@ -60,7 +60,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let drawFunc         = if drawPixel then drawPoint else drawLine
     for i=1 to 2_000 do
         drawFunc (polar angle distance)
-        angle    <- angle    + 22.34f
+        angle    <- angle + 22.34f
         distance <- wrap 0f 600f (distance + 22.5f)
 
     // Draw UI
