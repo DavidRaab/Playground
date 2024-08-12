@@ -39,7 +39,7 @@ module Dic =
 
 type STree<'a> = {
     ChunkSize: int
-    Chunks:    Dic<struct (int * int), ResizeArray<Vector2 * 'a>>
+    Chunks:    Dic<struct (int * int), ResizeArray<'a>>
 }
 
 module STree =
@@ -54,15 +54,37 @@ module STree =
             count <- count + ra.Count
         count
 
+    /// Returns chunk as x,y,w,h. Can be used as input for Rectangle
+    let getChunkRegions tree = seq {
+        let s = tree.ChunkSize
+        for (x,y) in tree.Chunks.Keys do
+            (if x > 0 then x-1 else x) * s,
+            (if y > 0 then y-1 else y) * s,
+            s, s
+    }
+
     /// Calculates the position in the Stree for the Vector2
     let calcPos (vec:Vector2) stree =
-        let x = int vec.X / stree.ChunkSize
-        let y = int vec.Y / stree.ChunkSize
+        let x =
+            if vec.X >= 0f
+            then (int vec.X / stree.ChunkSize) + 1
+            else (int vec.X / stree.ChunkSize) - 1
+        let y =
+            if vec.Y >= 0f
+            then (int vec.Y / stree.ChunkSize) + 1
+            else (int vec.Y / stree.ChunkSize) - 1
         struct (x,y)
 
     /// Adds an object with position to a spatial tree
     let add (position:Vector2) x stree =
-        Dic.push (calcPos position stree) (position,x) stree.Chunks
+        Dic.push (calcPos position stree) x stree.Chunks
+
+    /// Generates a Spatial Tree from a sequence
+    let fromSeq size seq =
+        let tree = create size
+        for (pos,x) in seq do
+            add pos x tree
+        tree
 
     /// returns a chunk for a position
     let get (position:Vector2) stree =
