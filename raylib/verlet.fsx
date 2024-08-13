@@ -128,10 +128,9 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         circles.Add(Circle.randomCircle mouse.Position)
 
     // Build Spatial Tree
-    let tree = STree.fromSeq 64 (seq {
-        for circle in circles do
-            yield circle.Position, circle
-    })
+    let tree = STree.create 64
+    for circle in circles do
+        STree.add circle.Position circle tree
 
     // Update Circles
     let subSteps = 4
