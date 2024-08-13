@@ -90,4 +90,14 @@ module STree =
     let get (position:Vector2) stree =
         Dic.get (calcPos position stree) stree.Chunks
 
-
+    /// visits all chunks that lies in the defined center position with
+    /// width, height
+    let inline getRec stree (center:Vector2) width height ([<InlineIfLambda>] f) =
+        let struct (tl_x,tl_y) = calcPos (Vector2(center.X-width, center.Y-height)) stree
+        let struct (tr_x,_   ) = calcPos (Vector2(center.X+width, center.Y-height)) stree
+        let struct (_   ,bl_y) = calcPos (Vector2(center.X-width, center.Y+height)) stree
+        for x=tl_x to tr_x do
+            for y=tl_y to bl_y do
+                match stree.Chunks.TryGetValue(struct (x,y)) with
+                | false, _     -> ()
+                | true , chunk -> for item in chunk do f item
