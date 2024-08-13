@@ -13,9 +13,10 @@ type Point = {
 }
 
 let width, height = 1200, 800
+let pointSize = 10f
 let points = ResizeArray<_>([
     for i=1 to 10 do
-        { Pos = vec2 (randf -600f 600f) (randf -400f 400f); Radius = 10f }
+        { Pos = vec2 (randf -600f 600f) (randf -400f 400f); Radius = pointSize }
 ])
 
 // Allows dragging points
@@ -38,6 +39,9 @@ rl.SetTargetFPS(60)
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
     let mouse = getMouse (Some camera)
+
+    if mouse.Right = Pressed then
+        points.Add({Pos = (worldPosition mouse); Radius = pointSize })
 
     // Process Drageable
     drag <- processDrag drag points (fun p -> Circle (p.Pos,p.Radius)) mouse
