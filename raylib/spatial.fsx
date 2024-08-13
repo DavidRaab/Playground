@@ -62,19 +62,20 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     for point in points do
         rl.DrawCircleV(point.Pos, point.Radius, Color.Red)
 
-    onHover drag (fun point ->
+    match drag with
+    | Hover point ->
         rl.DrawCircleLinesV(point.Pos, point.Radius, Color.RayWhite)
         STree.getRec tree point.Pos point.Radius point.Radius (fun other ->
             rl.DrawLineV(point.Pos, other.Pos, Color.Yellow)
         )
-    )
-
-    // Draw a line to all points in the chunk
-    // match STree.get (worldPosition mouse) tree with
-    // | ValueNone       -> ()
-    // | ValueSome chunk ->
-    //     for point in chunk do
-    //         rl.DrawLineV(worldPosition mouse, point.Pos, Color.Yellow)
+    | NoDrag ->
+        // Draw a line to all points in the chunk
+        match STree.get (worldPosition mouse) tree with
+        | ValueNone       -> ()
+        | ValueSome chunk ->
+            for point in chunk do
+                rl.DrawLineV(worldPosition mouse, point.Pos, Color.Green)
+    | _ -> ()
 
     // Draw chunks that are populated
     for (x,y,w,h) in STree.getChunkRegions tree do
