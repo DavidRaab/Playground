@@ -12,7 +12,7 @@ open System.Numerics
 // https://www.youtube.com/watch?v=lS_qeBy3aQI  --  Writing a Physics Engine from Scratch
 
 // Some constants / Game state
-let screenWidth, screenHeight    = 1200, 800
+let screenWidth, screenHeight    = 1400, 900
 let circleAmount                 = 200
 let circleSizes                  = [| 7f |]
 let gravity                      = vec2 0f 1000f
@@ -42,6 +42,9 @@ module Circle =
             | 4 -> Color.SkyBlue
             | 5 -> Color.DarkGreen
     }
+
+    let addForce force circle =
+        circle.Acceleration <- circle.Acceleration + force
 
     let inline update circle (dt:float32) =
         // Long way:
@@ -108,7 +111,7 @@ module Circle =
 // Circles to draw.
 let circles =
     ResizeArray<_>(
-        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f)))
+        Seq.init circleAmount (fun i -> Circle.randomCircle (vec2 (randf 0f (float32 screenWidth)) (randf 0f 100f)))
     )
 
 // Game Loop
@@ -135,9 +138,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt       = dt / float32 subSteps
     for i=1 to subSteps do
         for circle in circles do
-            // Add Gravity
-            circle.Acceleration <- circle.Acceleration + gravity
-            // Update Position
+            Circle.addForce gravity circle
             Circle.update circle dt
             // Resolve Collision with Spatial Tree
             STree.getRec tree circle.Position circle.Radius circle.Radius (fun other ->
@@ -166,11 +167,11 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         circles.Clear()
         circles.AddRange(
             Seq.init circleAmount (fun i ->
-                Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f))
+                Circle.randomCircle (vec2 (randf 0f (float32 screenWidth)) (randf 0f 100f))
         ))
     if guiButton (rect 500f 10f 150f 30f) "Add 100" then
         circles.AddRange(
-            Seq.init 100 (fun i -> Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 100f)))
+            Seq.init 100 (fun i -> Circle.randomCircle (vec2 (randf 0f (float32 screenWidth)) (randf 0f 100f)))
         )
 
     rl.EndDrawing ()
