@@ -1,8 +1,10 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
 #load "Lib_RaylibHelper.fsx"
+#load "Lib_SpatialTree.fsx"
 open Raylib_cs
 open Lib_RaylibHelper
+open Lib_SpatialTree
 open System.Numerics
 
 // Some Resources to Watch:
@@ -12,7 +14,7 @@ open System.Numerics
 // Some constants / Game state
 let screenWidth, screenHeight    = 1200, 800
 let circleAmount                 = 200
-let circleSizes                  = [| 7f; 13f; 21f |]
+let circleSizes                  = [| 7f |]
 let gravity                      = vec2 0f 1000f
 let mutable showVelocity         = false
 
@@ -71,23 +73,22 @@ module Circle =
                 Color.RayWhite
             )
 
-    let resolveCollision circle circles =
-        for other in circles do
-            if not (isSame circle other) then
-                let toOther        = other.Position - circle.Position
-                let distance       = toOther.Length ()
-                let neededDistance = circle.Radius + other.Radius
-                if distance < neededDistance then
-                    let toOther     = toOther / distance // normalize vector
-                    let overlap     = neededDistance - distance
-                    // The simulation becomes better when the collision is not
-                    // fully resolved in one step. The idea is to just move
-                    // the object into the target position, but not set the
-                    // target position. But this can require multiple subSteps
-                    // in the gameLoop.
-                    let correction  = 0.5f * overlap * toOther
-                    circle.Position <- circle.Position - correction
-                    other.Position  <- other.Position  + correction
+    let resolveCollision circle other =
+        if not (isSame circle other) then
+            let toOther        = other.Position - circle.Position
+            let distance       = toOther.Length ()
+            let neededDistance = circle.Radius + other.Radius
+            if distance < neededDistance then
+                let toOther     = toOther / distance // normalize vector
+                let overlap     = neededDistance - distance
+                // The simulation becomes better when the collision is not
+                // fully resolved in one step. The idea is to just move
+                // the object into the target position, but not set the
+                // target position. But this can require multiple subSteps
+                // in the gameLoop.
+                let correction  = 0.5f * overlap * toOther
+                circle.Position <- circle.Position - correction
+                other.Position  <- other.Position  + correction
 
     let w, h = float32 screenWidth, float32 screenHeight
     let resolveScreenBoundaryCollision circle =
@@ -119,26 +120,38 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
     let mouse = getMouse None
 
-    rl.BeginDrawing ()
-    rl.ClearBackground(Color.Black)
-
     // Spawn circles
     if mouse.Left = Down then
         circles.Add(Circle.randomCircle mouse.Position)
 
+    // Build Spatial Tree
+    let tree = STree.fromSeq 64 (seq {
+        for circle in circles do
+            yield circle.Position, circle
+    })
+
     // Update Circles
-    for circle in circles do
-        // Add Gravity
-        circle.Acceleration <- circle.Acceleration + gravity
-        Circle.update circle dt
+    let subSteps = 4
+    let dt       = dt / float32 subSteps
+    for i=1 to subSteps do
+        for circle in circles do
+            // Add Gravity
+            circle.Acceleration <- circle.Acceleration + gravity
+            // Update Position
+            Circle.update circle dt
+            // Resolve Collision with Spatial Tree
+            STree.getRec tree circle.Position circle.Radius circle.Radius (fun other ->
+                Circle.resolveScreenBoundaryCollision circle
+                Circle.resolveCollision circle other
+            )
+
 
     // running collision resolution multiple times makes the simutalion more stable
     // no need to also subStep Circle.update
-    for i=1 to 2 do
-        for circle in circles do
-            Circle.resolveScreenBoundaryCollision circle
-            Circle.resolveCollision circle circles
 
+
+    rl.BeginDrawing ()
+    rl.ClearBackground(Color.Black)
     // draw always should be in its own loop. even when every circle is iterated
     // once it can be processed multiple times. Because collision detection can
     // move the same circle multiple times, even inside a single loop iteration.
@@ -152,14 +165,18 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     // Draw GUI
     rl.DrawFPS(0,0)
     rl.DrawText(System.String.Format("Circles: {0}", circles.Count), 1000, 10, 24, Color.Yellow)
+    if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
+        showVelocity <- not showVelocity
     if guiButton (rect 325f 10f 150f 30f) "New Circles" then
         circles.Clear()
         circles.AddRange(
             Seq.init circleAmount (fun i ->
                 Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 800f))
         ))
-    if guiButton (rect 100f 10f 200f 30f) (if showVelocity then "Hide Velocity" else "Show Velocity") then
-        showVelocity <- not showVelocity
+    if guiButton (rect 500f 10f 150f 30f) "Add 100" then
+        circles.AddRange(
+            Seq.init 100 (fun i -> Circle.randomCircle (vec2 (randf 0f 1200f) (randf 0f 100f)))
+        )
 
     rl.EndDrawing ()
 
