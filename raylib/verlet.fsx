@@ -145,11 +145,6 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
                 Circle.resolveCollision circle other
             )
 
-
-    // running collision resolution multiple times makes the simutalion more stable
-    // no need to also subStep Circle.update
-
-
     rl.BeginDrawing ()
     rl.ClearBackground(Color.Black)
     // draw always should be in its own loop. even when every circle is iterated
