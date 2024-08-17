@@ -1,36 +1,48 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
+#load "Lib_RaylibHelper.fsx"
 open Raylib_cs
+open Lib_RaylibHelper
 open System.Numerics
 
-let color r g b a =
-    let mutable c = Color()
-    c.R <- r
-    c.G <- g
-    c.B <- b
-    c.A <- a
-    c
+let mutable current  = Vector2(400f, 400f)
+let mutable previous = current
+let mutable target   = Vector2(400f, 400f)
 
-let mutable current = Vector2(400f, 400f)
-let mutable target  = Vector2(400f, 400f)
+let width, height = 1200, 900
+rl.InitWindow(width, height, "Mouse Follow")
 
-Raylib.InitWindow(800, 800, "Render Texture")
-Raylib.SetTargetFPS(60)
-while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
-    let dt = Raylib.GetFrameTime()
-    target  <- Raylib.GetMousePosition()
-    current <- Vector2.Lerp(current, target, dt)
+// When circle moves it draws something like "footsteps" onto a render texture
+let rt  = rl.LoadRenderTexture(width, height)
+let src = Rectangle(0f, 0f, float32 rt.Texture.Width, float32 -rt.Texture.Height)
 
-    Raylib.BeginDrawing ()
-    Raylib.ClearBackground(Color.Black)
+rl.SetTargetFPS(60)
+while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
+    let dt = rl.GetFrameTime()
+    target <- rl.GetMousePosition()
+
+    let t = 1.0 - System.Math.Pow(0.1, float dt)
+    current <- Vector2.Lerp(current,target,(float32 t))
+
+    rl.BeginDrawing ()
+    rl.ClearBackground(Color.Black)
+
+    if current <> previous then
+        rl.BeginTextureMode(rt)
+        rl.DrawCircleV(current, 2f, Color.RayWhite)
+        rl.EndTextureMode()
+        previous <- current
+
+    // Draw footsteps
+    rl.DrawTextureRec(rt.Texture, src, (vec2 0f 0f), Color.White)
 
     // Draw circle that follows mouse cursor
-    Raylib.DrawCircleV(current, 30f, Color.DarkBlue)
-    Raylib.DrawCircleV(current,  2f, Color.DarkBrown)
+    rl.DrawCircleV(current, 30f, Color.DarkBlue)
+    rl.DrawCircleV(current,  2f, Color.DarkBrown)
 
     // Draw mouse cursor and line
-    Raylib.DrawCircleV(target, 5f, Color.Yellow)
-    Raylib.DrawLineV(current, target, Color.RayWhite)
-    Raylib.EndDrawing ()
+    rl.DrawCircleV(target, 5f, Color.Yellow)
+    rl.DrawLineV(current, target, Color.RayWhite)
+    rl.EndDrawing ()
 
-Raylib.CloseWindow()
+rl.CloseWindow()
