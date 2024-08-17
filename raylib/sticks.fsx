@@ -305,7 +305,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
             let len = (a.Position - b.Position).Length()  - bstick.Stick.Length
             let max = bstick.Stick.Length * bstick.Factor - bstick.Stick.Length
             len / max
-        let c = lerpColor Color.DarkGray Color.Red n
+        let c = smoothstepColor Color.DarkGray Color.Red n
         rl.DrawLine(int a.Position.X, int a.Position.Y, int b.Position.X, int b.Position.Y, c)
 
     for point in points do

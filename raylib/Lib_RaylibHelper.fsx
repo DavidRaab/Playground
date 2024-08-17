@@ -20,6 +20,7 @@ let rad2deg             = 180f / System.MathF.PI
 let inline vec2 x y     = Vector2(x,y)
 let inline rect x y w h = Rectangle(x,y,w,h)
 let rng                 = System.Random ()
+
 /// random integer between min and max both inclusive
 let randi min max       = min + (rng.Next() % (max-min+1))
 /// random float between min and max both inclusive
@@ -35,12 +36,32 @@ let inline sind  degree = sin  (degree * deg2rad)
 /// asinus, but returns degree instead of rad
 let inline asind number = (asin number) * rad2deg
 
-
 /// Lerps a value between start and stop. Expects a normalized value between 0 and 1.
 /// when normalized value is 0 it returns start, when it turns 1 it returns stop.
-let inline lerp start stop normalized =
-    (start * (LanguagePrimitives.GenericOne - normalized)) + (stop * normalized)
+let inline lerp start stop t =
+    (start * (LanguagePrimitives.GenericOne - t)) + (stop * t)
 
+let smoothstep start stop (t:float) =
+    let v1 = t * t
+    let v2 = 1.0 - ((1.0 - t) * (1.0 - t))
+    lerp start stop (lerp v1 v2 t)
+
+let smoothstepf (start:float32) (stop:float32) (t:float32) : float32 =
+    float32 (smoothstep (float start) (float stop) (float t))
+
+// Wrapping of float32 and int. Best compared to clamp in just code.
+// clamp 10f 20f  5f -> 10f
+// clamp 10f 20f 10f -> 10f
+// clamp 10f 20f 15f -> 15f
+// clamp 10f 20f 20f -> 20f
+// clamp 10f 20f 25f -> 25f
+//
+// wrap  10f 20f  5f -> 15f
+// wrap  10f 20f 10f -> 10f
+// wrap  10f 20f 15f -> 15f
+// wrap  10f 20f 19f -> 19f
+// wrap  10f 20f 20f -> 10f
+// wrap  10f 20f 25f -> 15f
 let wrap (start:float32) (stop:float32) (value:float32) : float32 =
     let diff     = stop - start
     let quotient = floor ((value - start) / diff)
@@ -63,7 +84,13 @@ module Vector2 =
         Vector2(x,y)
 
     let rotateDeg (deg:float32) (v:Vector2) =
+        let v = vec2 0f 0f
         rotate (deg * deg2rad) v
+
+    let smoothStep (v1:Vector2) (v2:Vector2) (t:float32) : Vector2 =
+        vec2
+            (smoothstepf v1.X v2.X t)
+            (smoothstepf v1.Y v2.Y t)
 
 let inline color r g b a =
     let mutable c = Color()
@@ -79,6 +106,13 @@ let lerpColor (start:Color) (stop:Color) (n:float32) =
         (lerp (float32 start.G) (float32 stop.G) n)
         (lerp (float32 start.B) (float32 stop.B) n)
         (lerp (float32 start.A) (float32 stop.A) n)
+
+let smoothstepColor (start:Color) (stop:Color) (t:float32) =
+    color
+        (smoothstep (float start.R) (float stop.R) (float t))
+        (smoothstep (float start.G) (float stop.G) (float t))
+        (smoothstep (float start.B) (float stop.B) (float t))
+        (smoothstep (float start.A) (float stop.A) (float t))
 
 // A nicer way to get Mouse State
 type MouseButtonState =
