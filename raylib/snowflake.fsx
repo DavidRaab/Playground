@@ -56,7 +56,9 @@ for i=1 to 6 do
 
 
 // Generetas a Koch Fractal Snowflake
+Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint)
 Raylib.InitWindow(800, 800, "Snowflake")
+Rlgl.EnableSmoothLines()
 Raylib.SetTargetFPS(60)
 
 let mutable elapsed  = 0f
