@@ -1,9 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
-
-#load "Lib_RaylibHelper.fsx"
+#load "Lib/Helper.fsx"
 #load "../Lib/Test.fsx"
-
-open Lib_RaylibHelper
+open Helper
 open Test
 
 Test.is

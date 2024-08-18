@@ -1,10 +1,10 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
-#load "Lib_RaylibHelper.fsx"
-#load "Lib_SpatialTree.fsx"
+#load "Lib/Helper.fsx"
+#load "Lib/SpatialTree.fsx"
 open Raylib_cs
-open Lib_RaylibHelper
-open Lib_SpatialTree
+open Helper
+open SpatialTree
 open System.Numerics
 
 // Some Resources to Watch:

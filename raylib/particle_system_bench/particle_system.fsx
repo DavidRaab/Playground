@@ -1,8 +1,8 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
-#load "../Lib_RaylibHelper.fsx"
+#load "../Lib/Helper.fsx"
 open Raylib_cs
-open Lib_RaylibHelper
+open Helper
 open System.Numerics
 
 let screenWidth, screenHeight = 1200, 800

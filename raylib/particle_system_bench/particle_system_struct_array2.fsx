@@ -1,9 +1,9 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
-#load "../Lib_RaylibHelper.fsx"
+#load "../Lib/Helper.fsx"
 open Raylib_cs
-open Lib_RaylibHelper
 open System.Numerics
+open Helper
 
 // This is a modification of particle_system_struct.fsx.
 // It uses two arrays to updated and push particles into new array

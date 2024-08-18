@@ -1,9 +1,8 @@
 #!/usr/bin/env -S dotnet fsi
-
-#load "Lib_SpatialTree.fsx"
 #load "../Lib/Test.fsx"
+#load "Lib/SpatialTree.fsx"
 open System.Numerics
-open Lib_SpatialTree
+open SpatialTree
 open Test
 
 type GO = { Name: string }

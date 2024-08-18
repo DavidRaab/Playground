@@ -1,9 +1,9 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
-#load "Lib_RaylibHelper.fsx"
+#load "Lib/Helper.fsx"
 open Raylib_cs
+open Helper
 open System.Numerics
-open Lib_RaylibHelper
 
 rl.InitWindow(800, 800, "Render Texture")
 
@@ -18,7 +18,7 @@ rl.EndTextureMode ()
 
 rl.SetTargetFPS(60)
 while not <| toBool (rl.WindowShouldClose()) do
-    let mouse = getMouse ()
+    let mouse = getMouse None
     // Now all drawing operations draws to an Texture on the GPU
     rl.BeginTextureMode(rt)
     if mouse.Left = Down then
