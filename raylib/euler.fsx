@@ -17,15 +17,6 @@ let gravity                      = vec2 0f 500f
 let circleMinSize, circleMaxSize = 5f, 15f
 let mutable showVelocity         = false
 
-// Class Alias
-type rl = Raylib
-
-// Helper functions
-let isSame x y    = LanguagePrimitives.PhysicalEquality x y
-let rng           = System.Random ()
-let nextI min max = rng.Next(min,max)
-let nextF min max = min + (rng.NextSingle() * (max-min))
-
 let vectorMax max (vector:Vector2) =
     let length = vector.Length ()
     if length > max
@@ -34,8 +25,9 @@ let vectorMax max (vector:Vector2) =
 
 // Data-structures
 type Circle = {
-    mutable Position: Vector2
-    mutable Velocity: Vector2
+    mutable Position:     Vector2
+    mutable Velocity:     Vector2
+    mutable Acceleration: Vector2
     Mass:   float32
     Radius: float32
     Color:  Color
@@ -43,36 +35,39 @@ type Circle = {
 
 module Circle =
     let randomCircle pos =
-        let radius = nextF circleMinSize circleMaxSize
+        let radius = randf circleMinSize circleMaxSize
         {
             Position     = pos
             Velocity     = Vector2.Zero
+            Acceleration = Vector2.Zero
             // Mass depends on object size, but could be different. For visualaization
             // it makes sense to think a bigger object has more Mass.
             Mass         = radius
             Radius       = radius
             Color        =
-                match nextI 0 5 with
-                | 0 -> Color.DarkBlue
-                | 1 -> Color.Orange
-                | 2 -> Color.Purple
-                | 3 -> Color.SkyBlue
-                | 4 -> Color.DarkGreen
+                match randi 1 5 with
+                | 1 -> Color.DarkBlue
+                | 2 -> Color.Orange
+                | 3 -> Color.Purple
+                | 4 -> Color.SkyBlue
+                | 5 -> Color.DarkGreen
         }
 
-    let update circle (dt:float32) =
-        let acceleration = gravity
+    let addForce force circle =
+        circle.Acceleration <- circle.Acceleration + force
 
+    let update circle (dt:float32) =
         // Okay this is still Euler Method and not Verlet. Looking further into it.
         // But one important aspect is to update Velocity first before upting the
         // Position. Updating Velocity first has its own name "Semi-implicit Euler Method"
-        circle.Velocity <- circle.Velocity + (acceleration * dt)    |> vectorMax 1000f
-        circle.Position <- circle.Position + (circle.Velocity * dt)
+        circle.Velocity     <- circle.Velocity + (circle.Acceleration * dt) |> vectorMax 1000f
+        circle.Position     <- circle.Position + (circle.Velocity * dt)
+        circle.Acceleration <- Vector2.Zero
 
         // Adding some friction to the velocity so it becomes less over time
-        let friction    = 2f
-        let negVec      = -circle.Velocity * friction * dt
-        circle.Velocity <- circle.Velocity + negVec
+        // let friction    = 2f
+        // let negVec      = -circle.Velocity * friction * dt
+        // circle.Velocity <- circle.Velocity + negVec
 
     let draw circle =
         rl.DrawCircle (int circle.Position.X, int circle.Position.Y, circle.Radius, circle.Color)
@@ -86,16 +81,12 @@ module Circle =
 
     let resolveCollision circle circles =
         for other in circles do
-            if isSame circle other then
-                ()
-            else
+            if not (isSame circle other) then
                 let toOther        = other.Position - circle.Position
                 let distance       = toOther.Length ()
                 let neededDistance = circle.Radius + other.Radius
-                if distance >= neededDistance then
-                    ()
-                else
-                    let relSpeed    = circle.Velocity.Length () - other.Velocity.Length ()
+                if distance < neededDistance then
+                    let relSpeed    = circle.Velocity.Length() - other.Velocity.Length()
                     let toOther     = toOther / distance // normalize vector
                     let overlap     = (neededDistance - distance)
                     let halfOverlap = (toOther * overlap) / 2f
@@ -111,21 +102,20 @@ module Circle =
         let pos = circle.Position
         // Collision with Bottom Axis
         if pos.Y > (h - circle.Radius) then
-            circle.Position <- vec2 pos.X (h - circle.Radius)
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f -1f) * 0.2f
+            circle.Position.Y <- h - circle.Radius
+            circle.Velocity   <- Vector2.Reflect(circle.Velocity, vec2 0f -1f)
         // Collision with left Axis
         if pos.X < circle.Radius then
-            circle.Position <- vec2 circle.Radius pos.Y
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 1f 0f) * 0.5f
+            circle.Position.X <- circle.Radius
+            circle.Velocity   <- Vector2.Reflect(circle.Velocity, vec2 1f 0f)
         // Collision with Right Axis
         if pos.X > (w - circle.Radius) then
-            circle.Position <- vec2 (w - circle.Radius) pos.Y
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 -1f 0f) * 0.5f
+            circle.Position.X <- w - circle.Radius
+            circle.Velocity   <- Vector2.Reflect(circle.Velocity, vec2 -1f 0f)
         // Collision with Up Axis
         if pos.Y < circle.Radius then
-            circle.Position <- vec2 pos.X circle.Radius
-            circle.Velocity <- Vector2.Reflect(circle.Velocity, vec2 0f 1f) * 0.5f
-
+            circle.Position.Y <- circle.Radius
+            circle.Velocity   <- Vector2.Reflect(circle.Velocity, vec2 0f 1f)
 
 
 // Circles to draw
@@ -137,7 +127,7 @@ let mutable circles =
     )
 
 // Game Loop
-rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
+rl.InitWindow(screenWidth, screenHeight, "Semi-Implicit Euler")
 rl.SetTargetFPS(60)
 while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt    = rl.GetFrameTime()
@@ -165,6 +155,7 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     let dt = dt / subSteps
     for i=1 to int subSteps do
         for circle in circles do
+            Circle.addForce gravity circle
             Circle.update circle dt
             Circle.resolveCollision circle circles
             Circle.resolveScreenBoundaryCollision circle
