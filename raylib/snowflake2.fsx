@@ -1,7 +1,9 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
+#load "Lib/Helper.fsx"
 open Raylib_cs
 open System.Numerics
+open Helper
 
 // This programs allows drawing lines that then can be splited with
 // the Koch Fractal up to a certain limit. The order in which lines are
@@ -49,28 +51,12 @@ module Line =
         let l,r    = lrPoint input
         [(create s l); (create l center); (create center r); (create r e)]
 
-// Helper functions to create vector2 and a line
-let vec2 x y = Vector2(x,y)
-let line     = Line.create
+let line = Line.create
 
 // Annoying CBool in Raylib-cs. Most functions return a CBool. Not a problem in
 // C# because of implicit type conversion. But F# has explicit type conversion
 let inline toBool (cbool:CBool) : bool =
     CBool.op_Implicit cbool
-
-// Example using F# DU to get Mouse Button State
-type MouseState =
-    | Up
-    | Pressed
-    | Down
-    | Released
-
-// Get State of a Mouse Button
-let buttonState button =
-    if   Raylib.IsMouseButtonPressed  button |> toBool then Pressed
-    elif Raylib.IsMouseButtonDown     button |> toBool then Down
-    elif Raylib.IsMouseButtonReleased button |> toBool then Released
-    else Up
 
 // Lines to Draw
 // Note: For Beginners. This creates an immutable List. List stays immutable.
@@ -87,74 +73,62 @@ type MouseSelection =
 let mutable selection = NotStarted
 
 // Generetas a Koch Fractal Snowflake
+Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint)
 Raylib.InitWindow(800, 800, "Snowflake")
+Rlgl.EnableSmoothLines()
 Raylib.SetTargetFPS(60)
 
 // Game Loop
 while not <| CBool.op_Implicit (Raylib.WindowShouldClose()) do
-    // Get Mouse information
-    let mousePos = Raylib.GetMousePosition()
-    let left     = buttonState MouseButton.Left
+    let mouse = getMouse None
 
     // Handle mouse state for drawing lines
     selection <-
-        match selection, left with
-        | NotStarted,   Pressed  -> Start mousePos
-        | NotStarted,   Down     -> Start mousePos
+        match selection, mouse.Left with
+        | NotStarted,   Pressed  -> Start mouse.Position
+        | NotStarted,   Down     -> Start mouse.Position
         | NotStarted,   Released -> NotStarted
         | NotStarted,   Up       -> NotStarted
-        | Start _   ,   Pressed  -> Start mousePos
-        | Start s,      Down     -> Drag (s,mousePos)
-        | Start s,      Released -> Finish (s,mousePos)
-        | Start s,      Up       -> Finish (s,mousePos)
-        | Drag  (_,_),  Pressed  -> Start mousePos
-        | Drag  (s,_),  Down     -> Drag (s,mousePos)
-        | Drag  (s,_),  Released -> Finish (s,mousePos)
-        | Drag  (s,_),  Up       -> Finish (s,mousePos)
-        | Finish (_,_), Pressed  -> Start mousePos
-        | Finish (_,_), Down     -> Start mousePos
+        | Start _   ,   Pressed  -> Start mouse.Position
+        | Start s,      Down     -> Drag (s,mouse.Position)
+        | Start s,      Released -> Finish (s,mouse.Position)
+        | Start s,      Up       -> Finish (s,mouse.Position)
+        | Drag  (_,_),  Pressed  -> Start mouse.Position
+        | Drag  (s,_),  Down     -> Drag (s,mouse.Position)
+        | Drag  (s,_),  Released -> Finish (s,mouse.Position)
+        | Drag  (s,_),  Up       -> Finish (s,mouse.Position)
+        | Finish (_,_), Pressed  -> Start mouse.Position
+        | Finish (_,_), Down     -> Start mouse.Position
         | Finish (_,_), Released -> NotStarted
         | Finish (_,_), Up       -> NotStarted
 
     Raylib.BeginDrawing()
     Raylib.ClearBackground(Color.Black)
 
+    // Draws the lines
+    for line in lines do
+        Raylib.DrawLineEx((Line.start line), (Line.stop line), 1f, Color.Blue)
+
+    // Draw Mouse Cursor Line
     match selection with
     | NotStarted  -> ()
     | Start _     -> ()
     | Drag (s,e)  -> Raylib.DrawLineEx(s, e, 1f, Color.RayWhite)
     | Finish(s,e) ->
-        let line = (line s e)
+        let line = line s e
         if Line.length line > 3f then
             lines <- line :: lines
 
-    // Draw "split" button
-    let rect = Rectangle(250f, 10f, 100f, 30f)
-    Raylib.DrawRectangleRec(rect, Color.Gray)
-    Raylib.DrawRectangleLinesEx(rect, 1f, Color.White)
-    Raylib.DrawText("Split", 250+27, 13, 24, Color.Black)
-
-    if left = Pressed && (Raylib.CheckCollisionPointRec(mousePos, rect) |> toBool) then
+    // Draw UI
+    if guiButton (rect 250f 10f 100f 30f) "Split" then
         lines <- lines |> List.collect (fun line ->
             // only split lines into more segments if line is longer than 10px
             if Line.length line > 10f then Line.splitLine line else [line]
         )
-
-    // Draw "clear" button
-    let rect = Rectangle(400f, 10f, 100f, 30f)
-    Raylib.DrawRectangleRec(rect, Color.Gray)
-    Raylib.DrawRectangleLinesEx(rect, 1f, Color.White)
-    Raylib.DrawText("Clear", 400+22, 13, 24, Color.Black)
-
-    if left = Pressed && (Raylib.CheckCollisionPointRec(mousePos, rect) |> toBool) then
+    if guiButton (rect 400f 10f 100f 30f) "Clear" then
         lines <- []
-
-    // Info how many Lines are drawn
-    Raylib.DrawText((sprintf "Lines %d" (List.length lines)), 10, 10, 24, Color.Yellow)
-
-    // Draws the lines
-    for line in lines do
-        Raylib.DrawLineEx((Line.start line), (Line.stop line), 1f, Color.Blue)
+    Raylib.DrawText((sprintf "Lines %d" (List.length lines)), 600, 10, 24, Color.Yellow)
+    Raylib.DrawFPS(0,0)
 
     Raylib.EndDrawing()
 
