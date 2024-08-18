@@ -15,7 +15,6 @@ open Helper
 
 module Line =
     // Helper function
-    let private vec2 x y = Vector2(x,y)
     let private normalize vec = Vector2.Normalize(vec)
 
     // Line.T
@@ -52,11 +51,6 @@ module Line =
         [(create s l); (create l center); (create center r); (create r e)]
 
 let line = Line.create
-
-// Annoying CBool in Raylib-cs. Most functions return a CBool. Not a problem in
-// C# because of implicit type conversion. But F# has explicit type conversion
-let inline toBool (cbool:CBool) : bool =
-    CBool.op_Implicit cbool
 
 // Lines to Draw
 // Note: For Beginners. This creates an immutable List. List stays immutable.
