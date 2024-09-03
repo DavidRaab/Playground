@@ -14,11 +14,11 @@ open System.Numerics
 // https://www.youtube.com/watch?v=lS_qeBy3aQI  --  Writing a Physics Engine from Scratch
 
 // Some constants / Game state
-let screenWidth, screenHeight    = 1400, 900
-let circleAmount                 = 200
-let circleSizes                  = [| 3f; 5f; 7f; 9f |]
-let gravity                      = vec2 0f 1000f
-let mutable showVelocity         = false
+let screenWidth, screenHeight = 1400, 900
+let circleAmount              = 200
+let circleSizes               = [| 3f; 5f; 7f; 9f |]
+let gravity                   = vec2 0f 1000f
+let mutable showVelocity      = false
 
 // Data-structures
 [<NoComparison; NoEquality>]
