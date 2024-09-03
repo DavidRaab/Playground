@@ -185,7 +185,7 @@ sub binary_search {
     my $stop     = $args->{stop}     // @{$args->{data}} - 1;
 
     # Avoid lexical scoped variable inside loop - makes code faster
-    my ($index, $result) = (0,0);
+    my ($index, $result, $diff) = (0,0,0);
 
     # We set $a and $b because our comparer function use this values
     local $a = $search;
@@ -193,7 +193,8 @@ sub binary_search {
 
     while ( $start <= $stop ) {
         # compute index to check
-        $index = int (($start + $stop) / 2);
+        $diff  = ($stop - $start) / 2;
+        $index = int ($start + $diff);
 
         # call comparer
         $b      = $data->[$index];
