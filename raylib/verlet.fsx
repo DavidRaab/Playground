@@ -2,9 +2,11 @@
 #r "nuget:Raylib-cs"
 #load "Lib/Helper.fsx"
 #load "Lib/SpatialTree.fsx"
+#load "Lib/Verlet.fsx"
 open Raylib_cs
 open Helper
 open SpatialTree
+open Verlet
 open System.Numerics
 
 // Some Resources to Watch:
@@ -14,26 +16,25 @@ open System.Numerics
 // Some constants / Game state
 let screenWidth, screenHeight    = 1400, 900
 let circleAmount                 = 200
-let circleSizes                  = [| 7f |]
+let circleSizes                  = [| 3f; 5f; 7f; 9f |]
 let gravity                      = vec2 0f 1000f
 let mutable showVelocity         = false
 
 // Data-structures
 [<NoComparison; NoEquality>]
 type Circle = {
-    mutable OldPosition:  Vector2
-    mutable Position:     Vector2
-    mutable Acceleration: Vector2
-    Radius: float32
+    VPoint: VerletPoint
     Color:  Color
 }
 
 module Circle =
     let randomCircle pos = {
-        OldPosition  = pos
-        Position     = pos
-        Acceleration = Vector2.Zero
-        Radius       = randomOf circleSizes
+        VPoint = {
+            OldPosition  = pos
+            Position     = pos
+            Acceleration = Vector2.Zero
+            Radius       = randomOf circleSizes
+        }
         Color =
             match randi 1 5 with
             | 1 -> Color.DarkBlue
@@ -43,36 +44,16 @@ module Circle =
             | 5 -> Color.DarkGreen
     }
 
-    let addForce force circle =
-        circle.Acceleration <- circle.Acceleration + force
-
-    let inline update circle (dt:float32) =
-        // Long way:
-        // let velocity = circle.Position - circle.OldPosition
-        // circle.Position    <- circle.Position + velocity + (gravity * dt * dt)
-        let newPosition = 2f * circle.Position - circle.OldPosition + (circle.Acceleration * dt * dt)
-        circle.OldPosition  <- circle.Position
-        circle.Position     <- newPosition
-
-        // Took me some time why people apply Acceleration and then clear it.
-        // Here is the idea: During game computation a game object can be exposed
-        // to several forced (besides just gravity). All of that forces would
-        // just add their force to the Acceleration. During update a fraction
-        // of that force is applied. Then it must be cleared, because the object
-        // can be moved outside a force field. Just adding forces to the
-        // acceleration and clearing it every frame makes it easy to apply
-        // all kind of forces.
-        circle.Acceleration <- Vector2.Zero
-
     let draw circle =
         let inline ir x = int (round x)
-        rl.DrawCircle (ir circle.Position.X, ir circle.Position.Y, float32 circle.Radius, circle.Color)
+        let pos = circle.VPoint.Position
+        rl.DrawCircle (ir pos.X, ir pos.Y, float32 circle.VPoint.Radius, circle.Color)
         if showVelocity then
-            let velocity = circle.Position - circle.OldPosition
+            let velocity = Verlet.velocity circle.VPoint
             rl.DrawLine (
-                int circle.Position.X, int circle.Position.Y,
-                int (circle.Position.X + velocity.X),
-                int (circle.Position.Y + velocity.Y),
+                int pos.X, int pos.Y,
+                int (pos.X + velocity.X),
+                int (pos.Y + velocity.Y),
                 Color.RayWhite
             )
 
@@ -130,19 +111,20 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     // Build Spatial Tree
     let tree = STree.create 64
     for circle in circles do
-        STree.add circle.Position circle tree
+        STree.add circle.VPoint.Position circle tree
 
     // Update Circles
     let subSteps = 4
     let dt       = dt / float32 subSteps
     for i=1 to subSteps do
         for circle in circles do
-            Circle.addForce gravity circle
-            Circle.update circle dt
+            let vp = circle.VPoint
+            Verlet.addForce gravity vp
+            Verlet.updatePoint vp dt
             // Resolve Collision with Spatial Tree
-            STree.getRec tree circle.Position circle.Radius circle.Radius (fun other ->
-                Circle.resolveScreenBoundaryCollision circle
-                Circle.resolveCollision circle other
+            STree.getRec tree vp.Position vp.Radius vp.Radius (fun other ->
+                Circle.resolveScreenBoundaryCollision vp
+                Circle.resolveCollision vp other.VPoint
             )
 
     rl.BeginDrawing ()
