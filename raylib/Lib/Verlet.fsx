@@ -89,7 +89,7 @@ module Verlet =
         let axis = bstick.Stick.Start.Position - bstick.Stick.End.Position
         axis.Length() > (bstick.Stick.Length * bstick.Factor)
 
-    let addForce force point =
+    let inline addForce force point =
         point.Acceleration <- point.Acceleration + force
 
     let placeAt (pos:Vector2) vstruct =
