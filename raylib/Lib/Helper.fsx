@@ -184,7 +184,6 @@ type CollisionType =
 /// `drageables` the objects that should be drageable
 /// `toCollision` a function that creates a collision rectangle for a drageable object. This collision rectangle is used for mouse collision
 /// `mouse` current state of mouse
-/// `doAction` function that is executed when user Drags something. The drageable object is passed and an offset where the user clicked on the collision rect
 /// returns the new state of the drageable state.
 let processDrag current drageables toCollision mouse : Drageable<'a> =
     let checkHover () =
