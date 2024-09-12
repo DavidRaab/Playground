@@ -52,9 +52,9 @@ let insidePoly (point:Vector2) (poly:seq<Vector2>) =
     let (x,y) = point.X, point.Y
 
     let mutable inside = false
-    for i=0 to poly.Length-1 do
-        let start = arrayItem (i-1) poly
-        let stop  = arrayItem  i    poly
+    for i=0 to poly.Length-2 do
+        let start = Array.item  i    poly
+        let stop  = Array.item (i+1) poly
 
         let insideHeight = (y < start.Y && y > stop.Y) || (y < stop.Y && y > start.Y)
         if insideHeight then
@@ -65,6 +65,21 @@ let insidePoly (point:Vector2) (poly:seq<Vector2>) =
             let x_collision = start.X + (h * n) // x point for y value on line start to stop
             if x < x_collision then
                 inside <- not inside
+
+    // Explicitly check again line from first to last point
+    let start = Array.item  0              poly
+    let stop  = Array.item (poly.Length-1) poly
+
+    let insideHeight = (y < start.Y && y > stop.Y) || (y < stop.Y && y > start.Y)
+    if insideHeight then
+        let diffX       = start.X - stop.X
+        let diffY       = start.Y - stop.Y
+        let n           = diffX / diffY     // x movement per 1 y unit
+        let h           = y - start.Y       // height of y relative to start
+        let x_collision = start.X + (h * n) // x point for y value on line start to stop
+        if x < x_collision then
+            inside <- not inside
+
     inside
 
 let drawPoints points =
