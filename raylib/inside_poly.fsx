@@ -72,7 +72,10 @@ let drawPoints points =
         let color = if insidePoly point poly then Color.Red else Color.Yellow
         rl.DrawCircleV(point, pointSize, color)
 
-let points       = ResizeArray()
+let points = ResizeArray([
+    vec2 -200f -100f
+    vec2 -100f -200f
+])
 let mutable drag = NoDrag
 
 rl.InitWindow(screenWidth, screenHeight, "Hello, World!")

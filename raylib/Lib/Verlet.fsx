@@ -23,8 +23,9 @@ type BreakableStick = {
 
 [<NoComparison; NoEquality>]
 type VerletStructure = {
-    Points: VerletPoint list
-    Sticks: Stick list
+    Points:        array<VerletPoint>
+    Sticks:        array<Stick>
+    CollisionMesh: array<Vector2>
 }
 
 [<NoComparison; NoEquality>]
@@ -82,8 +83,33 @@ module Verlet =
         let n          = axis / distance
         let correction = stick.Length - distance
 
-        stick.Start.Position  <- stick.Start.Position  + (n * correction * 0.5f)
-        stick.End.Position <- stick.End.Position - (n * correction * 0.5f)
+        stick.Start.Position <- stick.Start.Position + (n * correction * 0.5f)
+        stick.End.Position   <- stick.End.Position   - (n * correction * 0.5f)
+
+    let pointInsideStructure (point:Vector2) vstruct =
+        let arrayItem idx (array:'a array) =
+            if idx < 0
+            then array.[array.Length + idx]
+            else array.[idx]
+
+        let poly  = vstruct.CollisionMesh
+        let (x,y) = point.X, point.Y
+
+        let mutable inside = false
+        for i=0 to poly.Length-1 do
+            let start = arrayItem (i-1) poly
+            let stop  = arrayItem  i    poly
+
+            let insideHeight = (y < start.Y && y > stop.Y) || (y < stop.Y && y > start.Y)
+            if insideHeight then
+                let diffX       = start.X - stop.X
+                let diffY       = start.Y - stop.Y
+                let n           = diffX / diffY     // x movement per 1 y unit
+                let h           = y - start.Y       // height of y relative to start
+                let x_collision = start.X + (h * n) // x point for y value on line start to stop
+                if x < x_collision then
+                    inside <- not inside
+        inside
 
     let shouldBreak bstick =
         let axis = bstick.Stick.Start.Position - bstick.Stick.End.Position
@@ -99,14 +125,15 @@ module Verlet =
 
     let pinFirst structure =
         match structure with
-        | { Points = []          } -> None
-        | { Points = first::rest } -> Some { Point = first; PinnedPosition = first.Position }
+        | { Points = [||]   } -> None
+        | { Points = points } -> Some { Point = points.[0]; PinnedPosition = points.[0].Position }
 
     let triangle (x:Vector2) y z =
         let a,b,c = point 10f x, point 10f y, point 10f z
         {
-            Points = [a; b; c]
-            Sticks = [stick a b; stick b c; stick c a]
+            Points        = [|a; b; c|]
+            Sticks        = [|stick a b; stick b c; stick c a|]
+            CollisionMesh = [||]
         }
 
     let quad x y z w =
@@ -115,8 +142,9 @@ module Verlet =
         let c = point 10f z
         let d = point 10f w
         {
-            Points = [a;b;c;d]
-            Sticks = [stick a b; stick b c; stick c d; stick d a; stick a c; stick b d]
+            Points        = [|a;b;c;d|]
+            Sticks        = [|stick a b; stick b c; stick c d; stick d a; stick a c; stick b d|]
+            CollisionMesh = [||]
         }
 
     let rectangle x y w h =
@@ -127,18 +155,21 @@ module Verlet =
         quad tl tr bl br
 
     let ropePoints points =
-        let rec loop points =
-            match points with
-            | []      -> { Points = [];      Sticks = [] }
-            | [point] -> { Points = [point]; Sticks = [] }
-            | current :: rest ->
-                let rope = loop rest
-                let next = List.head rope.Points
-                {
-                    Points = current :: rope.Points
-                    Sticks = (stick current next) :: rope.Sticks
-                }
-        loop points
+        let sticks (a:VerletPoint array) =
+            let ra = ResizeArray()
+            if a.Length <= 1 then
+                ra.ToArray()
+            else
+                for i=0 to a.Length-2 do
+                    ra.Add(stick a.[i] a.[i+1] )
+                ra.ToArray()
+
+        let points = Array.ofSeq points
+        {
+            Points        = points
+            Sticks        = sticks points
+            CollisionMesh = [||]
+        }
 
     let rope radius steps (start:Vector2) stop =
         let point  = point radius

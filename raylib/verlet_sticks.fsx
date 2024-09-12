@@ -19,15 +19,10 @@ let mutable showVelocity      = false
 
 // Data-structures
 [<NoComparison; NoEquality>]
-type VPoint = {
-    VPoint: VerletPoint
-    Color:  Color
+type Verlet = {
+    VStruct: VerletStructure
+    Color:   Color
 }
-
-module VPoint =
-    let collision vpoint =
-        let p = vpoint.VPoint
-        Circle (p.Position,p.Radius)
 
 let w, h = float32 screenWidth, float32 screenHeight
 let applyScreen point =
@@ -52,16 +47,22 @@ let applyScreen point =
         point.Position.Y <- point.Radius
 
 // The World to Draw
+let mutable structs = ResizeArray<_>()
 let mutable points  = ResizeArray<_>()
 let mutable sticks  = ResizeArray<_>()
 let mutable bsticks = ResizeArray<_>()
 let mutable pinned  = ResizeArray<_>()
 
 let addStructure color vstruct =
-    points.AddRange (List.map (fun p -> { VPoint = p; Color = color }) vstruct.Points)
-    sticks.AddRange vstruct.Sticks
+    structs.Add({
+        VStruct = vstruct
+        Color   = color
+    })
+    points.AddRange(vstruct.Points)
+    sticks.AddRange(vstruct.Sticks)
 
 let resetWorld () =
+    structs.Clear()
     points.Clear()
     sticks.Clear()
     bsticks.Clear()
@@ -119,6 +120,7 @@ resetWorld()
 
 let mutable currentDrag = NoDrag
 
+
 // Game Loop
 rl.SetConfigFlags(ConfigFlags.Msaa4xHint)
 rl.InitWindow(screenWidth, screenHeight, "Verlet Integration")
@@ -132,17 +134,16 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
     rl.ClearBackground(Color.Black)
 
     // Handles Drag of Points
-    currentDrag <- processDrag currentDrag points VPoint.collision mouse
+    currentDrag <- processDrag currentDrag points (fun p -> Circle (p.Position,p.Radius)) mouse
     match currentDrag with
     | NoDrag                   -> ()
     | Hover _                  -> ()
     | StartDrag (point,offset)
-    | InDrag    (point,offset) -> point.VPoint.Position <- mouse.Position
+    | InDrag    (point,offset) -> point.Position <- mouse.Position
     | EndDrag _                -> ()
 
     // Update VerletPoint
     for point in points do
-        let point = point.VPoint
         if useGravity then
             Verlet.addForce gravity point
         applyScreen point
@@ -180,13 +181,14 @@ while not <| CBool.op_Implicit (rl.WindowShouldClose()) do
         let c = smoothstepColor Color.DarkGray Color.Red n
         rl.DrawLine(int a.Position.X, int a.Position.Y, int b.Position.X, int b.Position.Y, c)
 
-    for point in points do
-        let p = point.VPoint
-        rl.DrawCircle(int p.Position.X, int p.Position.Y, p.Radius, point.Color)
+    for s in structs do
+        let color = s.Color
+        for p in s.VStruct.Points do
+            rl.DrawCircle(int p.Position.X, int p.Position.Y, p.Radius, color)
 
     // Highlight current hovered element
     match currentDrag with
-    | Hover point -> rl.DrawCircleLinesV(point.VPoint.Position, point.VPoint.Radius, Color.RayWhite)
+    | Hover point -> rl.DrawCircleLinesV(point.Position, point.Radius, Color.RayWhite)
     | _           -> ()
 
     // Draw GUI
