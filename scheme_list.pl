@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 use v5.36;
+use Carp;
 # use Sq -sig => 1;
 
 # Example picked from SICP: Page 125
@@ -30,8 +31,7 @@ sub is_empty($cons) {
 
 sub fold($list, $state, $f) {
     return $state if is_empty($list);
-    my $head = car($list);
-    return $f->($head, fold(cdr($list), $state, $f));
+    return $f->(car($list), fold(cdr($list), $state, $f));
 }
 
 sub mapl($list, $f) {
@@ -42,11 +42,29 @@ sub to_string($list) {
     '[' . (fold($list, "", sub($x,$rest) { $rest eq "" ? $x : "$x,$rest" })) . ']';
 }
 
-my $list   = cons(1, cons(2, cons(3, cons(4, undef))));
+sub list(@vars) {
+    my $list = undef;
+    for (my $idx=$#vars; $idx >= 0; $idx--) {
+        $list = cons($vars[$idx], $list);
+    }
+    return $list;
+}
+
+sub member($idx, $list) {
+    Carp::croak "Out of index" if is_empty($list);
+    return car($list) if $idx <= 0;
+    return member($idx-1, cdr($list));
+}
+
+sub remove($idx, $list) {
+    return cdr($list) if $idx <= 0;
+    return cons(car($list), remove($idx-1, cdr($list)));
+}
+
+my $list = list(1,2,3,4);
 say to_string($list);
 
 my $double = mapl($list, sub($x) { $x * 2 });
 say to_string($double);
-
-# say car($list);      # 1
-# say car(cdr($list)); # 2
+say member(2,$double);
+say to_string(remove(2,$double));
