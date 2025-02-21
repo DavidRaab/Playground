@@ -95,8 +95,9 @@ sub BUILD {
 
         if ( $entry->date < $before->date ) {
             die sprintf(
-                "Datum %s muss größer sein als vorheriger Eintrag\n",
-                $entry->dmy('.')
+                "Datum %s muss größer sein als %s\n",
+                $entry->date->dmy('.'),
+                $before->date->dmy('.'),
             );
         }
     }
