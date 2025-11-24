@@ -1,5 +1,6 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
+#load "Vec2.fsx"
 open Raylib_cs
 open System.Numerics
 
