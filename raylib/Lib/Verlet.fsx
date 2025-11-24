@@ -1,4 +1,8 @@
+#load "Vec2.fsx"
 open System.Numerics
+open Vec2
+
+let vec2 = Vec2.create
 
 [<NoComparison; NoEquality>]
 type VerletPoint = {
@@ -35,19 +39,17 @@ type Pinned = {
 }
 
 module Verlet =
-    let inline vec2 x y = Vector2(x,y)
-
     let point radius position = {
         OldPosition  = position
         Position     = position
-        Acceleration = Vector2.Zero
+        Acceleration = Vec2.zero
         Radius       = radius
     }
 
     let stick first second = {
         Start  = first
-        End = second
-        Length = Vector2.Distance(first.Position, second.Position)
+        End    = second
+        Length = Vec2.distance first.Position second.Position
     }
 
     let breakableStick first second factor = {
@@ -75,7 +77,7 @@ module Verlet =
         let newPosition     = 2f * point.Position - point.OldPosition + (point.Acceleration * dt * dt)
         point.OldPosition  <- point.Position
         point.Position     <- newPosition
-        point.Acceleration <- Vector2.Zero
+        point.Acceleration <- Vec2.zero
 
     let updateStick stick =
         let axis       = stick.Start.Position - stick.End.Position
@@ -87,18 +89,13 @@ module Verlet =
         stick.End.Position   <- stick.End.Position   - (n * correction * 0.5f)
 
     let pointInsideStructure (point:Vector2) vstruct =
-        let arrayItem idx (array:'a array) =
-            if idx < 0
-            then array.[array.Length + idx]
-            else array.[idx]
-
-        let poly  = vstruct.CollisionMesh
+        let mesh  = vstruct.CollisionMesh
         let (x,y) = point.X, point.Y
 
         let mutable inside = false
-        for i=0 to poly.Length-1 do
-            let start = arrayItem (i-1) poly
-            let stop  = arrayItem  i    poly
+        for i=0 to mesh.Length-1 do
+            let start = Array.item  i    mesh
+            let stop  = Array.item (i+1) mesh
 
             let insideHeight = (y < start.Y && y > stop.Y) || (y < stop.Y && y > start.Y)
             if insideHeight then
@@ -109,6 +106,21 @@ module Verlet =
                 let x_collision = start.X + (h * n) // x point for y value on line start to stop
                 if x < x_collision then
                     inside <- not inside
+
+        // Explicitly add first-last point line check
+        let start = Array.item  0              mesh
+        let stop  = Array.item (mesh.Length-1) mesh
+
+        let insideHeight = (y < start.Y && y > stop.Y) || (y < stop.Y && y > start.Y)
+        if insideHeight then
+            let diffX       = start.X - stop.X
+            let diffY       = start.Y - stop.Y
+            let n           = diffX / diffY     // x movement per 1 y unit
+            let h           = y - start.Y       // height of y relative to start
+            let x_collision = start.X + (h * n) // x point for y value on line start to stop
+            if x < x_collision then
+                inside <- not inside
+
         inside
 
     let shouldBreak bstick =
