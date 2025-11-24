@@ -1,7 +1,7 @@
 #!/usr/bin/env -S dotnet fsi
 #r "nuget:Raylib-cs"
-#load "Lib/Verlet.fsx"
 #load "Lib/Helper.fsx"
+#load "Lib/Verlet.fsx"
 open Raylib_cs
 open Helper
 open Verlet
