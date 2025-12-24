@@ -1,0 +1,42 @@
+#!/usr/bin/env perl
+use 5.040;
+use utf8;
+use open ':std', ':encoding(UTF-8)';
+# use Sq;
+
+my $file = $ARGV[0] // 'measurements.txt';
+
+my %data;
+open my $fh, '<', $file or die $!;
+my ($city,$temp,$min,$sum,$max,$count,$entry,$line);
+while ( $line = <$fh> ) {
+    chomp($line);
+    ($city,$temp) = split /;/, $line, 2;
+    # ($city,$temp) = $line =~ m/\A([^;]++);([^\n]++)$/;
+    if ( !defined($entry = $data{$city}) ) {
+        $entry       = [1_000,-1000,0,0];
+        $data{$city} = $entry;
+    }
+    ($min,$max,$sum) = @$entry;
+
+    $entry->[0] = $temp < $min ? $temp : +$min;
+    $entry->[1] = $temp > $max ? $temp : +$max;
+    $entry->[2] = $sum + $temp;
+    $entry->[3]++
+}
+close $fh;
+
+# Generate Output
+print "{ ";
+my $mean;
+for my ($city,$data) ( %data ) {
+    ($min,$max,$sum,$count) = @$data;
+    $mean = $sum / $count;
+    print "$city=$min/$mean/$max, ";
+}
+print "\b\b }\n";
+
+__END__
+use Devel::Size qw(total_size);
+printf "keys: %d\n", Hash::length(\%data);
+printf "memory: %f Mib\n", total_size(\%data) / 1024 / 1024;
