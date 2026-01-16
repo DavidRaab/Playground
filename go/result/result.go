@@ -28,12 +28,12 @@ func Err[T any](value error) Result[T] {
 //     }
 // }
 
-func wrap[T any](x T, error error) Result[T] {
-    if error == nil {
+func wrap[T any](x T, err error) Result[T] {
+    if err == nil {
         return Result[T]{ Ok:x, Err:nil }
     } else {
         var zero T
-        return Result[T]{ Ok:zero, Err:nil }
+        return Result[T]{ Ok:zero, Err:err }
     }
 }
 
@@ -117,17 +117,16 @@ func printNumber(num Result[float64]) {
 }
 
 func main() {
-    num1 := rmap(pf64("abc"), add100)
-    fmt.Println("num1", num1)
-    // C#: x => x + 100
-    // F#: (fun x -> x + 100.0)
-    // lambdas are annoying in Go because you must specify types and
-    // they are not inferred through type-inference
-    num2 := rmap(pf64("100"), func(x float64) float64 { return x + 100 })
-    num3 := rmap(pf64("50"), add100)
+    // num1 := rmap(pf64("abc"), add100)
+    // // C#: x => x + 100
+    // // F#: (fun x -> x + 100.0)
+    // // lambdas are annoying in Go because you must specify types and
+    // // they are not inferred through type-inference
+    // num2 := rmap(pf64("100"), func(x float64) float64 { return x + 100 })
+    // num3 := rmap(pf64("50"), add100)
 
-    printNumber(rmap2(num1, num2, add))
-    printNumber(rmap2(num2, num3, add))
+    // printNumber(rmap2(num1, num2, add))
+    // printNumber(rmap2(num2, num3, add))
 
     // msg := rmatch(num1,
     //     func(num float64) string { return strconv.FormatFloat(num, 'f', -1, 64) },
@@ -153,10 +152,7 @@ func main() {
 
     numA  := pf64("123")
     numB  := pf64("abc")
-    fmt.Println(numA)
-    fmt.Println(numB)
     added := rmap2(numA, numB, func(x float64, y float64) float64 { return x + y })
-    fmt.Println(added)
     msg   := rstring(added,    func(num float64)string            { return strconv.FormatFloat(num, 'f', -1, 64) })
     fmt.Println(msg)
 }
