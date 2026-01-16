@@ -50,19 +50,24 @@ $overview->{NVIDIA} = $overview->{NVIDIA}->group_by(sub($entry){
 
 # dump $overview;
 
-my $amd_owners = $overview->{AMD}        ->map(key 'row5')->sum_by(Str->chop);
-my $nv_gtx     = $overview->{NVIDIA}{GTX}->map(key 'row5')->sum_by(Str->chop);
-my $nv_rtx     = $overview->{NVIDIA}{RTX}->map(key 'row5')->sum_by(Str->chop);
-my $intel      = $overview->{Intel}      ->map(key 'row5')->sum_by(Str->chop);
+my $usage = hash;
+for my $row ( qw/row1 row2 row3 row4 row5/ ) {
+    my $to_num = sub($entry) {
+        if ( $entry->{$row} =~ m/\A ( \d+ \. \d+ | \d+ ) %\z/x ) {
+            return Some($1);
+        }
+        return None;
+    };
+
+    $usage->push(AMD          => $overview->{AMD}        ->choose($to_num)->sum);
+    $usage->push('NVIDIA GTX' => $overview->{NVIDIA}{GTX}->choose($to_num)->sum);
+    $usage->push('NVIDIA RTX' => $overview->{NVIDIA}{RTX}->choose($to_num)->sum);
+    $usage->push(Intel        => $overview->{Intel}      ->choose($to_num)->sum);
+    $usage->push(Other        => Str->chop($overview->{Other}[0]{$row}));
+}
 
 Sq->fmt->table({
-    data => [
-        ['AMD',        sprintf('%.2f%%', $amd_owners)],
-        ['NVIDIA GTX', sprintf('%.2f%%', $nv_gtx)],
-        ['NVIDIA RTX', sprintf('%.2f%%', $nv_rtx)],
-        ['Intel',      sprintf('%.2f%%', $intel)],
-        ['Other',      $overview->{Other}[0]{row5}],
-    ],
+    data => $usage->to_array(sub($k,$v){ [$k,@$v] })->sort_by(by_str, idx 0),
 });
 
 sub select_card($regex) {
@@ -81,11 +86,11 @@ printf "RTX 4000 %5.2f%%\n", $overview->{NVIDIA}{RTX}->choose(select_card qr/RTX
 printf "RTX 5000 %5.2f%%\n", $overview->{NVIDIA}{RTX}->choose(select_card qr/RTX 5/)->sum;
 
 __END__
-AMD        12.69%
-NVIDIA GTX 13.15%
-NVIDIA RTX 58.52%
-Intel      2.88%
-Other      12.80%
+AMD        11.26 11.9  12.24 12.14 12.69
+Intel      2.7   2.82  2.88  2.76  2.88
+NVIDIA GTX 13.96 13.75 13.86 13.37 13.15
+NVIDIA RTX 58.68 58.53 57.99 59.12 58.52
+Other      12.72 12.39 12.68 12.57 12.80
 
 RTX Owners
 RTX 2000  5.31%
