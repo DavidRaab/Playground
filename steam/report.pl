@@ -41,13 +41,17 @@ my $data =
 sub level($card) {
     state $profiles = hash(
         # everything <= RTX 5050
+        #   when a card is a little bit faster, but performance is closer to 5050 instead
+        #   of 5060, it is put into Low. Like 3060 Ti
         Low    => [
             qr/RTX 5050/, qr/RTX (2050|2060|2070|2080|3050|3060|4050|4060)/,
             qr/GTX/, qr/RX (570$|570 |580$|580 |5700|6600|6650|7600)/, qr/Radeon 780M/,
             qr/Intel UHD/,
         ],
-        Medium => [qr/RTX 5060/, qr/RTX 2080 (Ti|SUPER)/, qr/RTX (3070|4070)/, qr/RX (6700|6750)/],
-        High   => [qr/RTX 5070/, qr/RTX (3080|3090|4080)/, qr/RX 7800/],
+        # between 5060 - 5070
+        Medium => [qr/RTX 5060/, qr/RTX 2080 (Ti|SUPER)/, qr/RTX (3070|3080|4060 Ti|4070)/, qr/RX (6700|6750|7700)/],
+        # between 5070 - 5080
+        High   => [qr/RTX 5070/, qr/RTX (3090|4080|4070 Ti SUPER)/, qr/RX 7800/],
         # everything >= 5080
         Ultra  => [qr/RTX (5080|5090)/, qr/RTX 4090/, qr/7900 XTX/],
     );
@@ -84,7 +88,7 @@ my $level =
 
 # dump($level);
 print "Usage of Graphic Cards. Cards are divided into Low, Medium, High, Ultra\n";
-print "Low <= RTX 5050 | Medium = 5060(Ti) | High = 5070(Ti) | Ultra >= 5080\n";
+print "Low = <RTX 5050 | Medium = >5060 | High = >5070 | Ultra > 5080\n";
 print "Steam doesn't recognize a lot of AMD cards, so sadly they are UNKNOWN\n\n";
 my @rows = qw/row1 row2 row3 row4 row5/;
 Sq->fmt->table({
@@ -149,7 +153,7 @@ Sq->fmt->table({
     data => $usage->to_array(sub($k,$v){ [$k,@$v] })->sort_by(by_str, idx 0),
 });
 
-sub select_card($regex) {
+sub gpu_usage_of($regex) {
     return sub($entry) {
         if ( $entry->{gpu} =~ $regex ) {
             return Some(Str->chop($entry->{row5}))
@@ -158,21 +162,45 @@ sub select_card($regex) {
     }
 }
 
-print "\nRTX Owners\n";
-printf "RTX 2000 %5.2f%%\n", $overview->{NVIDIA}{RTX}->choose(select_card qr/RTX 2/)->sum;
-printf "RTX 3000 %5.2f%%\n", $overview->{NVIDIA}{RTX}->choose(select_card qr/RTX 3/)->sum;
-printf "RTX 4000 %5.2f%%\n", $overview->{NVIDIA}{RTX}->choose(select_card qr/RTX 4/)->sum;
-printf "RTX 5000 %5.2f%%\n", $overview->{NVIDIA}{RTX}->choose(select_card qr/RTX 5/)->sum;
+sub gpu_is($regex) {
+    return sub($entry) {
+        return $entry->{gpu} =~ $regex ? 1 : 0;
+    }
+}
+
+sub rtx_usage($regex) {
+    my $rtx = $overview->{NVIDIA}{RTX};
+    return $rtx->keep(gpu_is $regex)->fold_mut(hash, sub($entry, $state) {
+        $state->{row1} += percentage($entry->{row1})->or(0);
+        $state->{row2} += percentage($entry->{row2})->or(0);
+        $state->{row3} += percentage($entry->{row3})->or(0);
+        $state->{row4} += percentage($entry->{row4})->or(0);
+        $state->{row5} += percentage($entry->{row5})->or(0);
+    })->extract(qw/row1 row2 row3 row4 row5/)
+      ->all_some->or(array)
+      ->map(sub($num) { sprintf "%5.2f%%", $num })
+      ->expand;
+}
+
+print "\n";
+Sq->fmt->table({
+    data => [
+        ['RTX 2000', rtx_usage(qr/RTX 2/)],
+        ['RTX 3000', rtx_usage(qr/RTX 3/)],
+        ['RTX 4000', rtx_usage(qr/RTX 4/)],
+        ['RTX 5000', rtx_usage(qr/RTX 5/)],
+    ],
+});
 
 __END__
 Usage of Graphic Cards. Cards are divided into Low, Medium, High, Ultra
-Low <= RTX 5050 | Medium = 5060(Ti) | High = 5070(Ti) | Ultra >= 5080
+Low = <RTX 5050 | Medium = >5060 | High = >5070 | Ultra > 5080
 Steam doesn't recognize a lot of AMD cards, so sadly they are UNKNOWN
 
         row1  row2  row3  row4  row5
-Low     54.3  53.53 52.99 52.2  51.17
-Medium  15.96 16.03 16.1  16.68 16.65
-High    7.55  7.96  8.21  8.88  9.32
+Low     51.16 50.48 50.06 49.3  48.38
+Medium  20.71 20.64 20.64 21.12 21
+High    5.94  6.4   6.6   7.34  7.76
 Ultra   2.25  2.7   2.69  2.91  3.03
 Unknown 19.26 19.17 19.66 19.29 19.87
 
@@ -182,8 +210,7 @@ NVIDIA GTX 13.96 13.75 13.86 13.37 13.15
 NVIDIA RTX 58.68 58.53 57.99 59.12 58.52
 Other      12.72 12.39 12.68 12.57 12.80
 
-RTX Owners
-RTX 2000  5.31%
-RTX 3000 21.44%
-RTX 4000 22.18%
-RTX 5000  9.59%
+RTX 2000  5.89%  5.58%  5.61%  5.42%  5.31%
+RTX 3000 22.71% 22.12% 21.99% 21.65% 21.44%
+RTX 4000 24.38% 23.99% 22.84% 23.18% 22.18%
+RTX 5000  5.70%  6.84%  7.55%  8.87%  9.59%
